@@ -5,6 +5,8 @@ from pathlib import Path
 
 from pytz import timezone
 
+from behappy.resize import ResizeOptions, ImageResizer
+
 
 class Settings:
     def __init__(self):
@@ -18,6 +20,32 @@ class Settings:
 
     def timezone(self):
         return timezone('UTC')
+
+    def image_sizes(self):
+        return {
+            'tiny': {
+                'WIDTH': 150,
+                'HEIGHT': 150,
+                'CROP': True,
+                'QUALITY': 85,
+            },
+            'small': {
+                'WIDTH': 300,
+                'HEIGHT': 300,
+                'CROP': True,
+            },
+            'big': {
+                'WIDTH': 1920,
+                'HEIGHT': 1080,
+            },
+            'full': {
+                'WIDTH': 10 ** 6,
+                'HEIGHT': 10 ** 6,
+            },
+        }
+
+    def image_size(self, name):
+        return self.image_sizes()[name]
 
 
 class Gallery:
@@ -70,8 +98,13 @@ class BeHappy:
     def build(self):
         self._load_albums()
         for album in self.gallery.albums:
-            print(album)
-            print(album.image_set.images())
+            path = Path('./target/album/{}'.format(album.uid))
+            path.mkdir(parents=True, exist_ok=True)
+            for image in album.image_set.images():
+                for name, size in self.settings.image_sizes().items():
+                    option = ResizeOptions.from_settings(size, name)
+                    resizer = ImageResizer()
+                    resizer.resize(album, image, option)
 
     def _load_albums(self):
         for p in self.settings.source_folders():
