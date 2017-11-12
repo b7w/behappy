@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import configparser
+import hashlib
 from datetime import datetime
 from pathlib import Path
 
@@ -54,6 +55,27 @@ class Gallery:
         self.albums = []
 
 
+class Image:
+    def __init__(self, path):
+        self.path = path
+
+    def uri(self, album_uid, size_options):
+        cache_name = self._cache_name(size_options)
+        return Path('/album/{}/{}/{}.jpg'.format(album_uid, size_options.name, cache_name))
+
+    def cache_path(self, album_id, size_options):
+        return Path('./target', Path(self.uri(album_id, size_options)).relative_to('/'))
+
+    def _cache_name(self, size_options):
+        option_pack = tuple()
+        option_pack += (size_options.height, size_options.width, size_options.quality, size_options.crop)
+        option_pack += (size_options.name, self.path.absolute().as_posix(), self.path.stat().st_ctime,)
+        return self._hash_for(str(option_pack))
+
+    def _hash_for(self, content):
+        return hashlib.sha1(bytes(content, encoding='utf-8')).hexdigest()
+
+
 class ImageSet:
     def __init__(self, path, thumbnail, include, exclude):
         self.path = path
@@ -69,7 +91,7 @@ class ImageSet:
         for i in self.exclude:
             for p in self.path.glob(i):
                 result.remove(p.absolute())
-        return sorted(result)
+        return [Image(p) for p in sorted(result)]
 
     def __str__(self):
         return str(self.__dict__)
@@ -97,14 +119,17 @@ class BeHappy:
 
     def build(self):
         self._load_albums()
+        self.resize_images()
+
+    def resize_images(self):
+        resizer = ImageResizer()
         for album in self.gallery.albums:
             path = Path('./target/album/{}'.format(album.uid))
             path.mkdir(parents=True, exist_ok=True)
             for image in album.image_set.images():
                 for name, size in self.settings.image_sizes().items():
                     option = ResizeOptions.from_settings(size, name)
-                    resizer = ImageResizer()
-                    resizer.resize(album, image, option)
+                    resizer.resize(image.path, image.cache_path(album.uid, option), option)
 
     def _load_albums(self):
         for p in self.settings.source_folders():

@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-import hashlib
 import logging
 import os
 import shutil
-from pathlib import Path
 
 from PIL import Image
 
@@ -175,11 +173,10 @@ class CacheImage(object):
 
 
 class ImageResizer:
-    def resize(self, album, path, option):
-        cache_path = self.cache_path(album, path, option)
-        if not cache_path.exists():
-            cache_path.parent.mkdir(parents=True, exist_ok=True)
-            with path.open(mode='rb') as fin:
+    def resize(self, from_path, to_path, option):
+        if not to_path.exists():
+            to_path.parent.mkdir(parents=True, exist_ok=True)
+            with from_path.open(mode='rb') as fin:
                 resize_image = ResizeImage(fin)
                 bigger = resize_image.is_bigger(option.width, option.height)
                 if bigger:
@@ -190,34 +187,11 @@ class ImageResizer:
                     else:
                         w, h = resize_image.scale_to(option.width, option.height)
                         resize_image.resize(w, h)
-                    with cache_path.open(mode='wb') as fout:
+                    with to_path.open(mode='wb') as fout:
                         resize_image.save_to(fout, option.quality)
 
-                    logger.debug('resize \'%s\' with %s', path, option)
+                    logger.debug('resize \'%s\' with %s', from_path, option)
                 else:
-                    shutil.copy2(path.as_posix(), cache_path.as_posix())
+                    shutil.copy2(from_path.as_posix(), to_path.as_posix())
 
-            os.chmod(cache_path.as_posix(), 0o644)
-
-    def cache_path(self, album, path, option):
-        """
-
-        :type album: behappy.main.Album
-        """
-        name = self._cache_name(path, option)
-        return Path('./target/album/{}/{}/{}'.format(album.uid, option.name, name))
-
-    def _cache_name(self, path, option):
-        """
-        :type path: pathlib.Path
-        """
-        option_pack = tuple()
-        if option:
-            option_pack += (option.height, option.width, option.quality, option.crop, option.name)
-            option_pack += (path.absolute().as_posix(), path.stat().st_ctime,)
-        else:
-            option_pack += (path, path.stat().st_ctime,)
-        return self._hash_for(str(option_pack)) + '.jpeg'
-
-    def _hash_for(self, content):
-        return hashlib.sha1(bytes(content, encoding='utf-8')).hexdigest()
+            os.chmod(to_path.as_posix(), 0o644)
