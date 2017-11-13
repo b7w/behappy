@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import configparser
 import hashlib
+import shutil
 from datetime import datetime
 from pathlib import Path
 
+from jinja2 import Environment, FileSystemLoader
 from pytz import timezone
 
 from behappy.resize import ResizeOptions, ImageResizer
@@ -21,6 +23,9 @@ class Settings:
 
     def timezone(self):
         return timezone('UTC')
+
+    def template_path(self):
+        return 'behappy/templates'
 
     def image_sizes(self):
         return {
@@ -47,6 +52,32 @@ class Settings:
 
     def image_size(self, name):
         return self.image_sizes()[name]
+
+    def about(self):
+        return {
+            'title': '~Hello~',
+            'text': '''My name is B7W, because a love monochrome photos.
+
+So what can I write here, nothing clever it seems.
+Main target of this resource is share photos in good quality.
+
+So look, feel, be happy :-)''',
+        }
+
+    def copyright(self):
+        return {
+            'email': 'mailto:bviewer@isudo.ru',
+            'username': 'B7W',
+        }
+
+    def template_extra_html(self):
+        return ''
+
+    def templates_parameters(self):
+        return {
+            'copyright': self.copyright(),
+            'EXTRA_HTML': self.template_extra_html()
+        }
 
 
 class Gallery:
@@ -116,10 +147,24 @@ class BeHappy:
     def __init__(self, settings):
         self.settings = settings
         self.gallery = Gallery(settings.desc())
+        self.jinja = Environment(loader=FileSystemLoader(self.settings.template_path()), trim_blocks=True)
 
     def build(self):
         self._load_albums()
         self.resize_images()
+        self.copy_static_resources()
+        self.render_about_page()
+
+    def render_about_page(self):
+        html = self.jinja.get_template('about.jinja2').render(**self.settings.templates_parameters(),
+                                                              **self.settings.about())
+        with open('./target/about.html', mode='w') as f:
+            f.write(html)
+
+    def copy_static_resources(self):
+        for t in ('css', 'img', 'js'):
+            shutil.rmtree('./target/{}'.format(t), ignore_errors=True)
+            shutil.copytree(self.settings.template_path() + '/{}'.format(t), './target/{}'.format(t))
 
     def resize_images(self):
         resizer = ImageResizer()
