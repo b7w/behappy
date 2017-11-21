@@ -80,6 +80,9 @@ So look, feel, be happy :-)''',
         }
 
 
+settings = Settings()
+
+
 class Gallery:
     def __init__(self, desc):
         self.desc = desc
@@ -90,12 +93,13 @@ class Image:
     def __init__(self, path):
         self.path = path
 
-    def uri(self, album_uid, size_options):
+    def uri(self, album_uid, size_name):
+        size_options = ResizeOptions.from_settings(settings.image_size(size_name), size_name)
         cache_name = self._cache_name(size_options)
         return Path('/album/{}/{}/{}.jpg'.format(album_uid, size_options.name, cache_name))
 
     def cache_path(self, album_id, size_options):
-        return Path('./target', Path(self.uri(album_id, size_options)).relative_to('/'))
+        return Path('./target', Path(self.uri(album_id, size_options.name)).relative_to('/'))
 
     def _cache_name(self, size_options):
         option_pack = tuple()
@@ -109,12 +113,15 @@ class Image:
 
 class ImageSet:
     def __init__(self, path, thumbnail, include, exclude):
+        """
+        :type path: pathlib.Path
+        """
         self.path = path
-        self.thumbnail = thumbnail
+        self.thumbnail_path = thumbnail
         self.include = [i.strip() for i in include.split(',')] or []
         self.exclude = [i.strip() for i in exclude.split(',')] or []
 
-    def images(self):
+    def images(self, all=False):
         result = set()
         for i in self.include:
             for p in self.path.glob(i):
@@ -122,62 +129,95 @@ class ImageSet:
         for i in self.exclude:
             for p in self.path.glob(i):
                 result.remove(p.absolute())
+        if self.thumbnail_path and all:
+            thumbnail = Path(self.path, self.thumbnail_path)
+            if thumbnail.exists():
+                result.add(thumbnail.absolute())
+            else:
+                raise Exception('Can not find thumbnail: {}'.format(thumbnail))
         return [Image(p) for p in sorted(result)]
+
+    @property
+    def thumbnail(self):
+        if self.thumbnail_path:
+            thumbnail = Path(self.path, self.thumbnail_path)
+            if thumbnail.exists():
+                return Image(thumbnail.absolute())
+        return None
 
     def __str__(self):
         return str(self.__dict__)
 
 
 class Album:
-    def __init__(self, settings, uid, parent, name, desc, date, path, image_set):
-        self.settings = settings
+    def __init__(self, uid, parent, name, desc, date, path, image_set):
         self.uid = uid
         self.parent = parent
         self.name = name
         self.desc = desc
-        self.date = datetime.strptime(date, '%Y-%m-%d').replace(tzinfo=self.settings.timezone())
+        self.date = datetime.strptime(date, '%Y-%m-%d').replace(tzinfo=settings.timezone())
         self.path = path
         self.image_set = image_set
+
+    def uri(self):
+        return '/album/{}/'.format(self.uid)
 
     def __str__(self):
         return str(self.__dict__)
 
 
+def date_filter(value, fmt):
+    return value.strftime(fmt)
+
+
+def linebreaksbr_filter(value):
+    return value.replace('\n', '<br/>')
+
+
 class BeHappy:
-    def __init__(self, settings):
-        self.settings = settings
+    def __init__(self):
         self.gallery = Gallery(settings.desc())
-        self.jinja = Environment(loader=FileSystemLoader(self.settings.template_path()), trim_blocks=True)
+        self.jinja = Environment(loader=FileSystemLoader(settings.template_path()), trim_blocks=True)
+        self.jinja.filters['date'] = date_filter
+        self.jinja.filters['linebreaksbr'] = linebreaksbr_filter
 
     def build(self):
         self._load_albums()
         self.resize_images()
         self.copy_static_resources()
         self.render_about_page()
+        self.render_gallery_pages()
 
     def render_about_page(self):
-        html = self.jinja.get_template('about.jinja2').render(**self.settings.templates_parameters(),
-                                                              **self.settings.about())
+        html = self.jinja.get_template('about.jinja2').render(**settings.templates_parameters(),
+                                                              **settings.about())
         with open('./target/about.html', mode='w') as f:
+            f.write(html)
+
+    def render_gallery_pages(self):
+        params = dict(title='Welcome', description=self.gallery.desc, albums=self.gallery.albums)
+        html = self.jinja.get_template('gallery.jinja2').render(**params,
+                                                                **settings.templates_parameters())
+        with open('./target/index.html', mode='w') as f:
             f.write(html)
 
     def copy_static_resources(self):
         for t in ('css', 'img', 'js'):
             shutil.rmtree('./target/{}'.format(t), ignore_errors=True)
-            shutil.copytree(self.settings.template_path() + '/{}'.format(t), './target/{}'.format(t))
+            shutil.copytree(settings.template_path() + '/{}'.format(t), './target/{}'.format(t))
 
     def resize_images(self):
         resizer = ImageResizer()
         for album in self.gallery.albums:
             path = Path('./target/album/{}'.format(album.uid))
             path.mkdir(parents=True, exist_ok=True)
-            for image in album.image_set.images():
-                for name, size in self.settings.image_sizes().items():
+            for image in album.image_set.images(all=True):
+                for name, size in settings.image_sizes().items():
                     option = ResizeOptions.from_settings(size, name)
                     resizer.resize(image.path, image.cache_path(album.uid, option), option)
 
     def _load_albums(self):
-        for p in self.settings.source_folders():
+        for p in settings.source_folders():
             inis = p.glob('**/behappy.ini')
             for ini in inis:
                 conf = configparser.ConfigParser()
@@ -189,7 +229,6 @@ class BeHappy:
                     exclude=conf.get('images', 'exclude', fallback=None),
                 )
                 album = Album(
-                    self.settings,
                     uid=conf.get('album', 'id'),
                     parent=conf.get('album', 'parent', fallback=None),
                     name=conf.get('album', 'name'),

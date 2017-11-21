@@ -1,0 +1,74 @@
+{% extends 'base.jinja2' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+
+{% block main %}
+    <div class="album-title">
+        <h2>{{ title }}</h2>
+
+        <p class="small pull-right">{{ albums|length }} albums</p>
+
+        <p class="description">{{ description|linebreaksbr }}</p>
+    </div>
+
+    <ul class="album">
+        {% for item in albums %}
+            <li class="preview">
+                <div class="preview-body" data-url="/album/{{ item.uid }}/">
+                    {% if item.image_set.thumbnail %}
+                        <img data-src="{{ item.image_set.thumbnail.uri(item.uid, 'small') }}">
+                    {% else %}
+                        <img src="/img/album.png" alt="" style="opacity: 0.8;">
+                    {% endif %}
+
+                    <div class="carousel-caption">
+                        <h4>{{ item.title }}</h4>
+
+                        <p class="carousel-description">
+                            <span class="time">{{ item.date|date("%d %M %Y") }}<br></span>
+                            <span class="text">{{ item.desc|linebreaksbr }}</span>
+                        </p>
+                    </div>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+
+    {#    <div class="album-years">#}
+    {#        {% if gallery.top_album_id == main.id %}#}
+    {#            {% for item in years %}#}
+    {#                <a href="{% url 'core.home' %}?year={{ item|date(" Y") }}"#}
+    {#                   class="{% if year_filter == item.year %}selected{% endif %}">{{ item|date("Y") }}</a>#}
+    {#            {% endfor %}#}
+    {#            {% if year_filter %}#}
+    {#                <a href="{% url 'core.home' %}">Reset</a>#}
+    {#            {% endif %}#}
+    {#        {% else %}#}
+    {#            {% for item in years %}#}
+    {#                <a href="{% url 'core.album' main.id %}?year={{ item|date:" Y" }}"#}
+    {#                   class="{% if year_filter == item.year %}selected{% endif %}">{{ item|date("Y") }}</a>#}
+    {#            {% endfor %}#}
+    {#            {% if year_filter %}#}
+    {#                <a href="{% url 'core.album' main.id %}">Reset</a>#}
+    {#            {% endif %}#}
+    {#        {% endif %}#}
+    {#    </div>#}
+{% endblock %}
+
+{% block media %}
+    {{ super() }}
+    <script id="shadowbox.js" src="/js/core.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        jQuery('.preview-body').click(function (e) {
+            var url = jQuery(this).attr('data-url');
+            if (e.ctrlKey) {
+                window.open(url, '_blank').focus();
+            } else {
+                location.href = url;
+            }
+        });
+
+        core.imageLoading();
+    </script>
+{% endblock %}

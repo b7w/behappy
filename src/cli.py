@@ -6,7 +6,6 @@ from time import time
 import click
 
 from behappy.main import BeHappy
-from behappy.main import Settings
 
 
 @click.group()
@@ -20,8 +19,7 @@ def build(count):
     """
     Build static site
     """
-    settings = Settings()
-    blog = BeHappy(settings)
+    blog = BeHappy()
     blog.build()
 
 
