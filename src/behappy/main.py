@@ -91,12 +91,19 @@ class Gallery:
 
 class Image:
     def __init__(self, path):
+        """
+       :type path: pathlib.Path
+       """
         self.path = path
 
-    def uri(self, album_uid, size_name):
+    @property
+    def id(self):
+        return self._hash_for(self.path.as_posix())
+
+    def uri(self, album_id, size_name):
         size_options = ResizeOptions.from_settings(settings.image_size(size_name), size_name)
         cache_name = self._cache_name(size_options)
-        return Path('/album/{}/{}/{}.jpg'.format(album_uid, size_options.name, cache_name))
+        return Path('/album/{}/{}/{}.jpg'.format(album_id, size_options.name, cache_name))
 
     def cache_path(self, album_id, size_options):
         return Path('./target', Path(self.uri(album_id, size_options.name)).relative_to('/'))
@@ -150,8 +157,8 @@ class ImageSet:
 
 
 class Album:
-    def __init__(self, uid, parent, name, desc, date, path, image_set):
-        self.uid = uid
+    def __init__(self, id, parent, name, desc, date, path, image_set):
+        self.id = id
         self.parent = parent
         self.name = name
         self.desc = desc
@@ -160,7 +167,7 @@ class Album:
         self.image_set = image_set
 
     def uri(self):
-        return '/album/{}/'.format(self.uid)
+        return '/album/{}/'.format(self.id)
 
     def __str__(self):
         return str(self.__dict__)
@@ -187,6 +194,7 @@ class BeHappy:
         self.copy_static_resources()
         self.render_about_page()
         self.render_gallery_pages()
+        self.render_album_pages()
 
     def render_about_page(self):
         html = self.jinja.get_template('about.jinja2').render(**settings.templates_parameters(),
@@ -201,6 +209,14 @@ class BeHappy:
         with open('./target/index.html', mode='w') as f:
             f.write(html)
 
+    def render_album_pages(self):
+        for album in self.gallery.albums:
+            params = dict(album=album, images=album.image_set.images())
+            html = self.jinja.get_template('album.jinja2').render(**params,
+                                                                **settings.templates_parameters())
+            with open('./target/album/{}/index.html'.format(album.id), mode='w') as f:
+                f.write(html)
+
     def copy_static_resources(self):
         for t in ('css', 'img', 'js'):
             shutil.rmtree('./target/{}'.format(t), ignore_errors=True)
@@ -209,12 +225,12 @@ class BeHappy:
     def resize_images(self):
         resizer = ImageResizer()
         for album in self.gallery.albums:
-            path = Path('./target/album/{}'.format(album.uid))
+            path = Path('./target/album/{}'.format(album.id))
             path.mkdir(parents=True, exist_ok=True)
             for image in album.image_set.images(all=True):
                 for name, size in settings.image_sizes().items():
                     option = ResizeOptions.from_settings(size, name)
-                    resizer.resize(image.path, image.cache_path(album.uid, option), option)
+                    resizer.resize(image.path, image.cache_path(album.id, option), option)
 
     def _load_albums(self):
         for p in settings.source_folders():
@@ -229,7 +245,7 @@ class BeHappy:
                     exclude=conf.get('images', 'exclude', fallback=None),
                 )
                 album = Album(
-                    uid=conf.get('album', 'id'),
+                    id=conf.get('album', 'id'),
                     parent=conf.get('album', 'parent', fallback=None),
                     name=conf.get('album', 'name'),
                     desc=conf.get('album', 'desc'),

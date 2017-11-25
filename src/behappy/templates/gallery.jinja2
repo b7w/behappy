@@ -15,9 +15,9 @@
     <ul class="album">
         {% for item in albums %}
             <li class="preview">
-                <div class="preview-body" data-url="/album/{{ item.uid }}/">
+                <div class="preview-body" data-url="/album/{{ item.id }}/">
                     {% if item.image_set.thumbnail %}
-                        <img data-src="{{ item.image_set.thumbnail.uri(item.uid, 'small') }}">
+                        <img data-src="{{ item.image_set.thumbnail.uri(item.id, 'small') }}">
                     {% else %}
                         <img src="/img/album.png" alt="" style="opacity: 0.8;">
                     {% endif %}
