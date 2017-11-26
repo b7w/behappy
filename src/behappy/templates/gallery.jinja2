@@ -23,7 +23,7 @@
                     {% endif %}
 
                     <div class="carousel-caption">
-                        <h4>{{ item.title }}</h4>
+                        <h4>{{ item.name }}</h4>
 
                         <p class="carousel-description">
                             <span class="time">{{ item.date|date("%d %b %Y") }}<br></span>
@@ -35,25 +35,18 @@
         {% endfor %}
     </ul>
 
-    {#    <div class="album-years">#}
-    {#        {% if gallery.top_album_id == main.id %}#}
-    {#            {% for item in years %}#}
-    {#                <a href="{% url 'core.home' %}?year={{ item|date(" Y") }}"#}
-    {#                   class="{% if year_filter == item.year %}selected{% endif %}">{{ item|date("Y") }}</a>#}
-    {#            {% endfor %}#}
-    {#            {% if year_filter %}#}
-    {#                <a href="{% url 'core.home' %}">Reset</a>#}
-    {#            {% endif %}#}
-    {#        {% else %}#}
-    {#            {% for item in years %}#}
-    {#                <a href="{% url 'core.album' main.id %}?year={{ item|date:" Y" }}"#}
-    {#                   class="{% if year_filter == item.year %}selected{% endif %}">{{ item|date("Y") }}</a>#}
-    {#            {% endfor %}#}
-    {#            {% if year_filter %}#}
-    {#                <a href="{% url 'core.album' main.id %}">Reset</a>#}
-    {#            {% endif %}#}
-    {#        {% endif %}#}
-    {#    </div>#}
+    <div class="album-years">
+        {% if years %}
+            {% for item in years %}
+                <a href="/year/{{ item }}/"
+                   class="{% if current_year == item %}selected{% endif %}">{{ item }}</a>
+            {% endfor %}
+            {% if current_year %}
+                <a href="/">Reset</a>
+            {% endif %}
+        {% endif %}
+    </div>
+
 {% endblock %}
 
 {% block media %}
