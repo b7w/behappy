@@ -23,11 +23,11 @@
                     {% endif %}
 
                     <div class="carousel-caption">
-                        <h4>{{ item.name }}</h4>
+                        <h4>{{ item.title }}</h4>
 
                         <p class="carousel-description">
                             <span class="time">{{ item.date|date("%d %b %Y") }}<br></span>
-                            <span class="text">{{ item.desc|linebreaksbr }}</span>
+                            <span class="text">{{ item.description|linebreaksbr }}</span>
                         </p>
                     </div>
                 </div>

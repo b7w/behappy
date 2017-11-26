@@ -1,6 +1,6 @@
 {% extends "base.jinja2" %}
 
-{% block title %}{{ album.name }}{% endblock %}
+{% block title %}{{ album.title }}{% endblock %}
 
 {% block navigation %}
     <li class="view-full">
@@ -10,13 +10,13 @@
 
 {% block main %}
     <div class="album-title">
-        <h2>{{ album.name }}</h2>
+        <h2>{{ album.title }}</h2>
 
         <p class="time small pull-right">
             <strong>{{ album.date|date("%d %b %Y") }}</strong>, {{ images|length }} images
         </p>
 
-        <p class="description">{{ album.desc|linebreaksbr }}</p>
+        <p class="description">{{ album.description|linebreaksbr }}</p>
     </div>
 
     <ul class="album">

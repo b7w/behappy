@@ -18,8 +18,8 @@ class Settings:
     def source_folders(self):
         return [Path('/Users/B7W/Documents/Photos/').absolute(), ]
 
-    def desc(self):
-        return 'Gallery desc'
+    def description(self):
+        return 'Gallery description'
 
     def timezone(self):
         return timezone('UTC')
@@ -74,8 +74,8 @@ settings = Settings()
 
 
 class Gallery:
-    def __init__(self, desc):
-        self.desc = desc
+    def __init__(self, description):
+        self.description = description
         self.albums = []
 
     def years(self):
@@ -150,11 +150,11 @@ class ImageSet:
 
 
 class Album:
-    def __init__(self, id, parent, name, desc, date, path, image_set):
+    def __init__(self, id, parent, title, description, date, path, image_set):
         self.id = id
         self.parent = parent
-        self.name = name
-        self.desc = desc
+        self.title = title
+        self.description = description
         self.date = datetime.strptime(date, '%Y-%m-%d').replace(tzinfo=settings.timezone())
         self.path = path
         self.image_set = image_set
@@ -176,7 +176,7 @@ def linebreaksbr_filter(value):
 
 class BeHappy:
     def __init__(self):
-        self.gallery = Gallery(settings.desc())
+        self.gallery = Gallery(settings.description())
         self.jinja = Environment(loader=FileSystemLoader(settings.template_path()), trim_blocks=True)
         self.jinja.filters['date'] = date_filter
         self.jinja.filters['linebreaksbr'] = linebreaksbr_filter
@@ -200,7 +200,7 @@ class BeHappy:
             f.write(html)
 
     def render_gallery_pages(self):
-        params = dict(title='Welcome', description=self.gallery.desc, albums=self.gallery.albums,
+        params = dict(title='Welcome', description=self.gallery.description, albums=self.gallery.albums,
                       years=self.gallery.years())
         html = self.jinja.get_template('gallery.jinja2').render(**params,
                                                                 **settings.templates_parameters())
@@ -212,7 +212,7 @@ class BeHappy:
         for album in self.gallery.albums:
             groped.setdefault(album.date.year, []).append(album)
         for year, albums in groped.items():
-            params = dict(title='Welcome', description=self.gallery.desc, albums=albums, years=self.gallery.years(),
+            params = dict(title='Welcome', description=self.gallery.description, albums=albums, years=self.gallery.years(),
                           current_year=year)
             html = self.jinja.get_template('gallery.jinja2').render(**params,
                                                                     **settings.templates_parameters())
@@ -267,8 +267,8 @@ class BeHappy:
                 album = Album(
                     id=conf.get('album', 'id'),
                     parent=conf.get('album', 'parent', fallback=None),
-                    name=conf.get('album', 'name'),
-                    desc=conf.get('album', 'desc'),
+                    title=conf.get('album', 'title'),
+                    description=conf.get('album', 'description'),
                     date=conf.get('album', 'date'),
                     path=ini.parent,
                     image_set=image_set
