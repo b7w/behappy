@@ -189,11 +189,14 @@ class BeHappy:
         self.render_gallery_pages()
         self.render_gallery_per_year_pages()
         self.render_album_pages()
+        self.render_error_page(name='404', title='404', message='Page not found')
 
     def render_about_page(self):
         html = self.jinja.get_template('about.jinja2').render(**settings.templates_parameters(),
                                                               **settings.about())
-        with open('./target/about.html', mode='w') as f:
+        folder = Path('./target/about')
+        folder.mkdir(parents=True, exist_ok=True)
+        with open(Path(folder, 'index.html'), mode='w') as f:
             f.write(html)
 
     def render_gallery_pages(self):
@@ -225,6 +228,14 @@ class BeHappy:
                                                                   **settings.templates_parameters())
             with open('./target/album/{}/index.html'.format(album.id), mode='w') as f:
                 f.write(html)
+
+    def render_error_page(self, name, title, message):
+        html = self.jinja.get_template('message.jinja2').render(title=title, message=message,
+                                                                **settings.templates_parameters())
+        folder = Path('./target/error')
+        folder.mkdir(parents=True, exist_ok=True)
+        with open(Path(folder, '{}.html'.format(name)), mode='w') as f:
+            f.write(html)
 
     def copy_static_resources(self):
         for t in ('css', 'img', 'js'):
