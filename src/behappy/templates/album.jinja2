@@ -12,7 +12,9 @@
     <div class="album-title">
         <h2>{{ album.name }}</h2>
 
-        <p class="time small pull-right"><strong>{{ album.date|date("%d %M %Y") }}</strong>, {{ images|length }} images</p>
+        <p class="time small pull-right">
+            <strong>{{ album.date|date("%d %b %Y") }}</strong>, {{ images|length }} images
+        </p>
 
         <p class="description">{{ album.desc|linebreaksbr }}</p>
     </div>
@@ -24,12 +26,6 @@
                     <a class="shadowbox" href="{{ item.uri(album.id, 'big') }}" rel="shadowbox[images]">
                         <img data-src="{{ item.uri(album.id, 'small') }}">
                     </a>
-
-                    <div class="caption">
-                        <a class="url-core-download" href="{{ item.uri(album.id, 'full') }}">
-                            <i class="icon-white icon-arrow-down"></i>
-                        </a>
-                    </div>
                 </div>
             </li>
         {% endfor %}
