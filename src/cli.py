@@ -1,11 +1,25 @@
 # -*- coding: utf-8 -*-
 import os
+from functools import wraps
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from time import time
 
 import click
 
 from behappy.main import BeHappy
+
+
+def timeit(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        start = time()
+        try:
+            f(*args, **kwargs)
+        finally:
+            elapsed = int(time() - start)
+            print('## {0} complete in {1:d} min {2:d} sec'.format(f.__name__, elapsed // 60, elapsed % 60))
+
+    return wrapper
 
 
 @click.group()
@@ -15,6 +29,7 @@ def cli():
 
 @cli.command()
 @click.option('--count', default=1, help='Number of greetings.')
+@timeit
 def build(count):
     """
     Build static site
@@ -55,8 +70,3 @@ def new(url):
 
 if __name__ == '__main__':
     cli()
-    try:
-        t = time()
-        print('# done {0:.4f} second'.format(time() - t))
-    except Exception as e:
-        print('#! Error:', e)
