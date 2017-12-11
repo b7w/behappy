@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import configparser
 import csv
 from collections import namedtuple
 from pathlib import Path
@@ -47,43 +48,63 @@ def map_to_real(path, share_mapping):
     return Path(p)
 
 
-def convert(root, share_mapping, select_last):
+def write_ini(album, full_name=False):
+    """
+    :param full_name: bool
+    :param album: Album
+    """
+    name = 'behappy.ini' if not full_name else 'behappy.{}.ini'.format(album.id)
+    with Path(album.path, name).open(mode='w') as f:
+        config = configparser.ConfigParser()
+        config['album'] = dict(id=album.id, title=album.title, description=album.description, date=album.date)
+        if album.parent_id:
+            config['album']['parent'] = album.parent_id
+        config['images'] = dict(thumbnail=album.thumbnail, include=', '.join(i.as_posix() for i in album.images))
+        config.write(f)
+
+
+def convert(root, top_album, share_mapping, select_last):
     with open('/Users/B7W/Downloads/gallery.txt') as f:
         reader = csv.reader(f, delimiter=';')
         rows = [Row(*i) for i in reader]
         albums_id2paths = {}
         for r in rows:
-            if r.parent_id != ' c8827bb6':
-                albums_id2paths.setdefault(r.id, set()).add(Path(r.path).parent)
+            albums_id2paths.setdefault(r.id, set()).add(Path(r.path).parent)
         albums = []
         for id, paths in albums_id2paths.items():
             a = next(i for i in rows if i.id == id)
             path = album_directory(paths, id in select_last)
-            path = map_to_real(path, share_mapping)
+            parent_id = a.parent_id if a.parent_id != top_album else None
             album = Album(
                 id=id,
-                parent_id=a.parent_id,
+                parent_id=parent_id,
                 title=a.title,
                 description=a.description,
-                path=path,
+                path=Path(root, map_to_real(path, share_mapping)),
                 thumbnail=relative_to(a.thumbnail, path),
                 date=a.date,
                 images=[relative_to(i.path, path) for i in rows if i.id == id],
             )
             albums.append(album)
 
+        path2album = {}
         for album in albums:
-            path = Path(root, album.path)
-            print(path)
-            exists = path.exists()
-            print(exists, album)
+            path2album.setdefault(album.path, []).append(album)
+
+        for pack in path2album.values():
+            if len(pack) > 1:
+                for album in pack:
+                    write_ini(album, full_name=len(pack) > 1)
+            else:
+                write_ini(pack[0])
 
 
 @click.command(help='Share mapping')
 @click.option('--root', help='Viewer share path')
+@click.option('--top-album', help='Top album')
 @click.option('--share-mapping', multiple=True, help='Share mapping')
 @click.option('--select-last', multiple=True, help='Viewer share path')
-def main(root, share_mapping, select_last):
+def main(root, top_album, share_mapping, select_last):
     """
     Convert bviewer albums to behappy.ini
 
@@ -102,7 +123,7 @@ def main(root, share_mapping, select_last):
     ORDER BY core_album.id
     """
     share_mapping = [tuple(it.split(':')) for it in share_mapping]
-    convert(root, share_mapping, select_last)
+    convert(root, top_album, share_mapping, select_last)
 
 
 if __name__ == '__main__':
