@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import configparser
 import hashlib
+import itertools
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -16,7 +17,11 @@ class Settings:
         pass
 
     def source_folders(self):
-        return [Path('/Users/B7W/Documents/Photos/').absolute(), ]
+        return [
+            # Path('/Users/B7W/Documents/Photos/').absolute(),
+            Path('/Volumes/HomeStorage/Фотоархив').absolute(),
+            Path('/Volumes/HomeStorage/Документы - Сергей/Фото - Архив').absolute(),
+        ]
 
     def description(self):
         return 'Gallery description'
@@ -118,8 +123,13 @@ class ImageSet:
         """
         self.path = path
         self.thumbnail_path = thumbnail
-        self.include = [i.strip() for i in include.split(',') if i.strip()] or []
-        self.exclude = [i.strip() for i in exclude.split(',') if i.strip()] or []
+        self.include = self._split(include)
+        self.exclude = self._split(exclude)
+
+    def _split(self, value):
+        if value:
+            return [i.strip() for i in value.split(',') if i.strip()]
+        return []
 
     def images(self, all=False):
         result = set()
@@ -212,7 +222,8 @@ class BeHappy:
         for album in self.gallery.albums:
             groped.setdefault(album.date.year, []).append(album)
         for year, albums in groped.items():
-            params = dict(title='Welcome', description=self.gallery.description, albums=albums, years=self.gallery.years(),
+            params = dict(title='Welcome', description=self.gallery.description, albums=albums,
+                          years=self.gallery.years(),
                           current_year=year)
             html = self.jinja.get_template('gallery.jinja2').render(**params,
                                                                     **settings.templates_parameters())
@@ -254,7 +265,7 @@ class BeHappy:
 
     def _load_albums(self):
         for p in settings.source_folders():
-            inis = p.glob('**/behappy.ini')
+            inis = itertools.chain(p.glob('**/behappy.ini'), p.glob('**/behappy.*.ini'))
             for ini in inis:
                 conf = configparser.ConfigParser()
                 conf.read(ini)
@@ -274,3 +285,6 @@ class BeHappy:
                     image_set=image_set
                 )
                 self.gallery.albums.append(album)
+        albums_count = len(self.gallery.albums)
+        image_count = sum(len(i.image_set.images(all=True)) for i in self.gallery.albums)
+        print('Found {} albums and {} images'.format(albums_count, image_count))

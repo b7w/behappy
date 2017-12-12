@@ -35,7 +35,7 @@ def relative_to(path, root):
     while True:
         try:
             p = Path(path).relative_to(r)
-            return Path('../' * t, *p.parts[t:])
+            return Path('../' * t, p)
         except ValueError:
             t += 1
             r = r.parent
