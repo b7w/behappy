@@ -2,11 +2,13 @@
 import configparser
 import hashlib
 import itertools
+import os
 import shutil
 from datetime import datetime
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader
+import pkg_resources
+from jinja2 import Environment, PackageLoader
 from pytz import timezone
 
 from behappy.resize import ResizeOptions, ImageResizer
@@ -17,20 +19,14 @@ class Settings:
         pass
 
     def source_folders(self):
-        return [
-            # Path('/Users/B7W/Documents/Photos/').absolute(),
-            Path('/Volumes/HomeStorage/Фотоархив').absolute(),
-            Path('/Volumes/HomeStorage/Документы - Сергей/Фото - Архив').absolute(),
-        ]
+        paths = os.environ['SOURCE_FOLDERS'].split(':')
+        return [Path(i) for i in paths]
 
     def description(self):
         return 'Gallery description'
 
     def timezone(self):
         return timezone('UTC')
-
-    def template_path(self):
-        return 'behappy/templates'
 
     def image_sizes(self):
         return {
@@ -187,7 +183,10 @@ def linebreaksbr_filter(value):
 class BeHappy:
     def __init__(self):
         self.gallery = Gallery(settings.description())
-        self.jinja = Environment(loader=FileSystemLoader(settings.template_path()), trim_blocks=True)
+        self.jinja = Environment(
+            loader=PackageLoader('behappy'),
+            trim_blocks=True
+        )
         self.jinja.filters['date'] = date_filter
         self.jinja.filters['linebreaksbr'] = linebreaksbr_filter
 
@@ -251,7 +250,8 @@ class BeHappy:
     def copy_static_resources(self):
         for t in ('css', 'img', 'js'):
             shutil.rmtree('./target/{}'.format(t), ignore_errors=True)
-            shutil.copytree(settings.template_path() + '/{}'.format(t), './target/{}'.format(t))
+            path = pkg_resources.resource_filename('behappy', 'templates/{}'.format(t))
+            shutil.copytree(path, './target/{}'.format(t))
 
     def resize_images(self):
         resizer = ImageResizer()
