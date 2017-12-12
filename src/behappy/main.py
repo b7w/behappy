@@ -80,7 +80,7 @@ class Gallery:
         self.albums = []
 
     def years(self):
-        return list(reversed(list(set(i.date.year for i in self.albums))))
+        return sorted(set(i.date.year for i in self.albums), reverse=True)
 
 
 class Image:
