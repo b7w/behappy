@@ -267,10 +267,14 @@ class BeHappy:
         for album in self.gallery.albums:
             path = Path('./target/album/{}'.format(album.id))
             path.mkdir(parents=True, exist_ok=True)
+            count = 0
             for image in album.image_set.images(all=True):
                 for name, size in settings.image_sizes().items():
                     option = ResizeOptions.from_settings(size, name)
-                    resizer.resize(image.path, image.cache_path(album.id, option), option)
+                    r = resizer.resize(image.path, image.cache_path(album.id, option), option)
+                    if r:
+                        count += 1
+            print('[{}] {} conventions'.format(album.title, count))
 
     def _load_albums(self):
         for p in settings.source_folders():

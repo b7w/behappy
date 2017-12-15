@@ -195,3 +195,5 @@ class ImageResizer:
                     shutil.copy2(from_path.as_posix(), to_path.as_posix())
 
             os.chmod(to_path.as_posix(), 0o644)
+            return True
+        return False
