@@ -79,8 +79,11 @@ class Gallery:
         self.description = description
         self.albums = []
 
-    def years(self):
-        return sorted(set(i.date.year for i in self.albums), reverse=True)
+    def top_years(self):
+        return sorted(set(i.date.year for i in self.top_albums()), reverse=True)
+
+    def top_albums(self):
+        return [i for i in self.albums if not i.parent]
 
 
 class Image:
@@ -159,6 +162,7 @@ class Album:
     def __init__(self, id, parent, title, description, date, path, image_set):
         self.id = id
         self.parent = parent
+        self.children = []
         self.title = title
         self.description = description
         self.date = datetime.strptime(date, '%Y-%m-%d').replace(tzinfo=settings.timezone())
@@ -195,8 +199,8 @@ class BeHappy:
         self.resize_images()
         self.copy_static_resources()
         self.render_about_page()
-        self.render_gallery_pages()
-        self.render_gallery_per_year_pages()
+        self.render_index_pages()
+        self.render_year_pages()
         self.render_album_pages()
         self.render_error_page(name='404', title='404', message='Page not found')
 
@@ -208,21 +212,21 @@ class BeHappy:
         with open(Path(folder, 'index.html'), mode='w') as f:
             f.write(html)
 
-    def render_gallery_pages(self):
-        params = dict(title='Welcome', description=self.gallery.description, albums=self.gallery.albums,
-                      years=self.gallery.years())
+    def render_index_pages(self):
+        params = dict(title='Welcome', description=self.gallery.description, albums=self.gallery.top_albums(),
+                      years=self.gallery.top_years())
         html = self.jinja.get_template('gallery.jinja2').render(**params,
                                                                 **settings.templates_parameters())
         with open('./target/index.html', mode='w') as f:
             f.write(html)
 
-    def render_gallery_per_year_pages(self):
+    def render_year_pages(self):
         groped = {}
-        for album in self.gallery.albums:
+        for album in self.gallery.top_albums():
             groped.setdefault(album.date.year, []).append(album)
         for year, albums in groped.items():
             params = dict(title='Welcome', description=self.gallery.description, albums=albums,
-                          years=self.gallery.years(),
+                          years=self.gallery.top_years(),
                           current_year=year)
             html = self.jinja.get_template('gallery.jinja2').render(**params,
                                                                     **settings.templates_parameters())
@@ -233,9 +237,14 @@ class BeHappy:
 
     def render_album_pages(self):
         for album in self.gallery.albums:
-            params = dict(album=album, images=album.image_set.images())
-            html = self.jinja.get_template('album.jinja2').render(**params,
-                                                                  **settings.templates_parameters())
+            if album.children:
+                params = dict(title=album.title, description=album.description, albums=album.children)
+                html = self.jinja.get_template('gallery.jinja2').render(**params,
+                                                                        **settings.templates_parameters())
+            else:
+                params = dict(album=album, images=album.image_set.images())
+                html = self.jinja.get_template('album.jinja2').render(**params,
+                                                                      **settings.templates_parameters())
             with open('./target/album/{}/index.html'.format(album.id), mode='w') as f:
                 f.write(html)
 
@@ -272,7 +281,7 @@ class BeHappy:
                 image_set = ImageSet(
                     path=ini.parent,
                     thumbnail=conf.get('images', 'thumbnail'),
-                    include=conf.get('images', 'include'),
+                    include=conf.get('images', 'include', fallback=None),
                     exclude=conf.get('images', 'exclude', fallback=None),
                 )
                 album = Album(
@@ -285,6 +294,9 @@ class BeHappy:
                     image_set=image_set
                 )
                 self.gallery.albums.append(album)
+        for album in self.gallery.albums:
+            album.children = [i for i in self.gallery.albums if album.id == i.parent]
+
         albums_count = len(self.gallery.albums)
         image_count = sum(len(i.image_set.images(all=True)) for i in self.gallery.albums)
         print('Found {} albums and {} images'.format(albums_count, image_count))
