@@ -63,8 +63,8 @@ def write_ini(album, full_name=False):
         config.write(f)
 
 
-def convert(root, top_album, share_mapping, select_last):
-    with open('/Users/B7W/Downloads/gallery.txt') as f:
+def convert(dump, root, top_album, share_mapping, select_last):
+    with open(dump) as f:
         reader = csv.reader(f, delimiter=';')
         rows = [Row(*i) for i in reader]
         albums_id2paths = {}
@@ -99,31 +99,34 @@ def convert(root, top_album, share_mapping, select_last):
                 write_ini(pack[0])
 
 
-@click.command(help='Share mapping')
+@click.command(help='Convert bviewer db to behappy.ini')
+@click.option('--dump', help='Query in csv format')
 @click.option('--root', help='Viewer share path')
 @click.option('--top-album', help='Top album')
 @click.option('--share-mapping', multiple=True, help='Share mapping')
 @click.option('--select-last', multiple=True, help='Viewer share path')
-def main(root, top_album, share_mapping, select_last):
+def main(dump, root, top_album, share_mapping, select_last):
     """
     Convert bviewer albums to behappy.ini
 
-    SELECT
-      core_album.id,
-      core_album.parent_id,
-      core_album.title,
-      core_album.description,
-      (SELECT core_image.path
-       FROM core_image
-       WHERE core_image.id = thumbnail_id) AS thumbnail,
-      to_char(core_album.time, 'YYYY-MM-DD')  AS date,
-      core_image.path
-    FROM core_album
-      JOIN core_image ON core_album.id = core_image.album_id
-    ORDER BY core_album.id
+    Run query on bviewer db and export as csv (';' as delimiter)
+
+        SELECT
+          core_album.id,
+          core_album.parent_id,
+          core_album.title,
+          core_album.description,
+          (SELECT core_image.path
+           FROM core_image
+           WHERE core_image.id = thumbnail_id) AS thumbnail,
+          to_char(core_album.time, 'YYYY-MM-DD')  AS date,
+          core_image.path
+        FROM core_album
+          JOIN core_image ON core_album.id = core_image.album_id
+        ORDER BY core_album.id
     """
     share_mapping = [tuple(it.split(':')) for it in share_mapping]
-    convert(root, top_album, share_mapping, select_last)
+    convert(dump, root, top_album, share_mapping, select_last)
 
 
 if __name__ == '__main__':
