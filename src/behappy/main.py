@@ -78,6 +78,17 @@ class Gallery:
     def __init__(self, description):
         self.description = description
         self.albums = []
+        self._ids = {}
+
+    def add_album(self, album):
+        if album.id not in self._ids:
+            self.albums.append(album)
+            self._ids[album.id] = album
+        else:
+            title = self._ids[album.id].title
+            path = self._ids[album.id].path
+            msg = 'Gallery already have album "{}" with id {}\n{}\n{}'
+            raise Exception(msg.format(title, album.id, path, album.path))
 
     def top_years(self):
         return sorted(set(i.date.year for i in self.top_albums()), reverse=True)
@@ -297,7 +308,7 @@ class BeHappy:
                     path=ini.parent,
                     image_set=image_set
                 )
-                self.gallery.albums.append(album)
+                self.gallery.add_album(album)
         for album in self.gallery.albums:
             album.children = [i for i in self.gallery.albums if album.id == i.parent]
 
