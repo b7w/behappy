@@ -28,9 +28,8 @@ def cli():
 
 
 @cli.command()
-@click.option('--count', default=1, help='Number of greetings.')
 @timeit
-def build(count):
+def build():
     """
     Build static site
     """
@@ -43,9 +42,9 @@ def server(port=8000):
     """
     Run test web server
     """
-    if not os.path.exists(conf.DEPLOY_PATH):
-        os.mkdir(conf.DEPLOY_PATH)
-    os.chdir(conf.DEPLOY_PATH)
+    if not os.path.exists('target'):
+        os.mkdir('target')
+    os.chdir('target')
 
     httpd = HTTPServer(('0.0.0.0', port), SimpleHTTPRequestHandler)
     print('# server at http://127.0.0.1:{0}'.format(port))
@@ -53,17 +52,9 @@ def server(port=8000):
 
 
 @cli.command()
-def clear():
+def new():
     """
-    Remove deploy directory
-    """
-    pass
-
-
-@cli.command()
-def new(url):
-    """
-    Create new post file. Get url name of new post.
+    Create new album.
     """
     pass
 
