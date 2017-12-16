@@ -32,15 +32,15 @@ class BeHappy:
 
     def build(self):
         self._load_albums()
-        self.resize_images()
-        self.copy_static_resources()
-        self.render_about_page()
-        self.render_index_pages()
-        self.render_year_pages()
-        self.render_album_pages()
-        self.render_error_page(name='404', title='404', message='Page not found')
+        self._resize_images()
+        self._copy_static_resources()
+        self._render_about_page()
+        self._render_index_pages()
+        self._render_year_pages()
+        self._render_album_pages()
+        self._render_error_page(name='404', title='404', message='Page not found')
 
-    def render_about_page(self):
+    def _render_about_page(self):
         html = self.jinja.get_template('about.jinja2').render(**settings.templates_parameters(),
                                                               **settings.about())
         folder = Path('./target/about')
@@ -48,7 +48,7 @@ class BeHappy:
         with open(Path(folder, 'index.html'), mode='w') as f:
             f.write(html)
 
-    def render_index_pages(self):
+    def _render_index_pages(self):
         params = dict(title='Welcome', description=self.gallery.description, albums=self.gallery.top_albums(),
                       years=self.gallery.top_years())
         html = self.jinja.get_template('gallery.jinja2').render(**params,
@@ -56,7 +56,7 @@ class BeHappy:
         with open('./target/index.html', mode='w') as f:
             f.write(html)
 
-    def render_year_pages(self):
+    def _render_year_pages(self):
         groped = {}
         for album in self.gallery.top_albums():
             groped.setdefault(album.date.year, []).append(album)
@@ -71,7 +71,7 @@ class BeHappy:
             with open(Path(folder, 'index.html').as_posix(), mode='w') as f:
                 f.write(html)
 
-    def render_album_pages(self):
+    def _render_album_pages(self):
         for album in self.gallery.albums:
             if album.children:
                 params = dict(title=album.title, description=album.description, albums=album.children)
@@ -84,7 +84,7 @@ class BeHappy:
             with open('./target/album/{}/index.html'.format(album.id), mode='w') as f:
                 f.write(html)
 
-    def render_error_page(self, name, title, message):
+    def _render_error_page(self, name, title, message):
         html = self.jinja.get_template('message.jinja2').render(title=title, message=message,
                                                                 **settings.templates_parameters())
         folder = Path('./target/error')
@@ -92,13 +92,13 @@ class BeHappy:
         with open(Path(folder, '{}.html'.format(name)), mode='w') as f:
             f.write(html)
 
-    def copy_static_resources(self):
+    def _copy_static_resources(self):
         for t in ('css', 'img', 'js'):
             shutil.rmtree('./target/{}'.format(t), ignore_errors=True)
             path = pkg_resources.resource_filename('behappy', 'templates/{}'.format(t))
             shutil.copytree(path, './target/{}'.format(t))
 
-    def resize_images(self):
+    def _resize_images(self):
         resizer = ImageResizer()
         for album in self.gallery.albums:
             path = Path('./target/album/{}'.format(album.id))
