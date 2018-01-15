@@ -6,6 +6,7 @@ from time import time
 
 import click
 
+from behappy.conf import settings
 from behappy.main import BeHappy
 
 
@@ -28,11 +29,14 @@ def cli():
 
 
 @cli.command()
+@click.option('--conf', default='behappy.ini', help='Path to config')
 @timeit
-def build():
+def build(conf):
     """
     Build static site
     """
+    settings.load(conf)
+
     blog = BeHappy()
     blog.build()
 
