@@ -34,10 +34,10 @@
             </ul>
             <ul class="pull-right">
                 {% if back %}
-                    {% if back.home %}
-                        <li><a href="/">Back</a></li>
+                    {% if back.id %}
+                        <li><a href="/album/{{ back.id }}/">Back</a></li>
                     {% else %}
-                        <li><a href="/album/123/">Back</a></li>
+                        <li><a href="/">Back</a></li>
                     {% endif %}
                     <li class="divider-vertical"></li>
                 {% endif %}

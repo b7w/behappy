@@ -74,13 +74,18 @@ class ImageSet:
             return [i.strip() for i in value.split(',') if i.strip()]
         return []
 
+    def _filter_hidden(self, iterable):
+        for path in iterable:
+            if not path.name.startswith('.'):
+                yield path
+
     def images(self, all=False):
         result = set()
         for i in self.include:
-            for p in self.path.glob(i):
+            for p in self._filter_hidden(self.path.glob(i)):
                 result.add(p.absolute())
         for i in self.exclude:
-            for p in self.path.glob(i):
+            for p in self._filter_hidden(self.path.glob(i)):
                 result.remove(p.absolute())
         if self.thumbnail_path and all:
             thumbnail = Path(self.path, self.thumbnail_path)

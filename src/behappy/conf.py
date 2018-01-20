@@ -31,8 +31,8 @@ class Settings:
         for sec in sec:
             name = sec.replace('images:', '')
             res[name] = {
-                'WIDTH': self._conf.get(sec, 'width'),
-                'HEIGHT': self._conf.get(sec, 'height'),
+                'WIDTH': int(self._conf.get(sec, 'width')),
+                'HEIGHT': int(self._conf.get(sec, 'height')),
                 'CROP': self._conf.get(sec, 'crop', fallback=False),
             }
 

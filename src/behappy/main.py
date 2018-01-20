@@ -74,11 +74,12 @@ class BeHappy:
     def _render_album_pages(self):
         for album in self.gallery.albums:
             if album.children:
-                params = dict(title=album.title, description=album.description, albums=album.children)
+                params = dict(title=album.title, description=album.description, albums=album.children,
+                              back=dict(id=album.parent))
                 html = self.jinja.get_template('gallery.jinja2').render(**params,
                                                                         **settings.templates_parameters())
             else:
-                params = dict(album=album, images=album.image_set.images())
+                params = dict(album=album, images=album.image_set.images(), back=dict(id=album.parent))
                 html = self.jinja.get_template('album.jinja2').render(**params,
                                                                       **settings.templates_parameters())
             with open('./target/album/{}/index.html'.format(album.id), mode='w') as f:
@@ -104,13 +105,16 @@ class BeHappy:
             path = Path('./target/album/{}'.format(album.id))
             path.mkdir(parents=True, exist_ok=True)
             count = 0
+            count_all = 0
             for image in album.image_set.images(all=True):
                 for name, size in settings.image_sizes().items():
                     option = ResizeOptions.from_settings(size, name)
                     r = resizer.resize(image.path, image.cache_path(album.id, option), option)
                     if r:
                         count += 1
-            print('[{}] {} conventions'.format(album.title, count))
+                    count_all += 1
+
+            print('[{}] {} of {} conventions'.format(album.title, count, count_all))
 
     def _load_albums(self):
         for p in settings.source_folders():
