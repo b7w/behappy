@@ -5,6 +5,7 @@ from pathlib import Path
 
 from behappy.conf import settings
 from behappy.resize import ResizeOptions
+from behappy.utils import read_exif_dates
 
 
 class Gallery:
@@ -31,11 +32,13 @@ class Gallery:
 
 
 class Image:
-    def __init__(self, path):
+    def __init__(self, path, date):
         """
        :type path: pathlib.Path
+       :type date: datetime.datetime
        """
         self.path = path
+        self.date = date
 
     @property
     def id(self):
@@ -79,7 +82,7 @@ class ImageSet:
             if not path.name.startswith('.'):
                 yield path
 
-    def images(self, all=False):
+    def images(self, all=False, sort_by='path'):
         result = set()
         for i in self.include:
             for p in self._filter_hidden(self.path.glob(i)):
@@ -93,14 +96,16 @@ class ImageSet:
                 result.add(thumbnail.absolute())
             else:
                 raise Exception('Can not find thumbnail: {}'.format(thumbnail))
-        return [Image(p) for p in sorted(result)]
+        images = [Image(p, d) for p, d in read_exif_dates(result)]
+        return sorted(images, key=lambda x: getattr(x, sort_by))
 
     @property
     def thumbnail(self):
         if self.thumbnail_path:
             thumbnail = Path(self.path, self.thumbnail_path)
             if thumbnail.exists():
-                return Image(thumbnail.absolute())
+                path, date = read_exif_dates([thumbnail.absolute()])[0]
+                return Image(path, date)
         return None
 
     def __str__(self):
