@@ -2,7 +2,6 @@
 import hashlib
 from datetime import datetime
 from pathlib import Path
-from pprint import pprint
 
 from behappy.conf import settings
 from behappy.resize import ResizeOptions
@@ -102,7 +101,6 @@ class ImageSet:
             else:
                 raise Exception('Can not find thumbnail: {}'.format(thumbnail))
         images = [Image(p, d) for p, d in read_exif_dates(result)]
-        pprint(sorted(images, key=lambda x: getattr(x, self.sortby)))
         return sorted(images, key=lambda x: getattr(x, self.sortby))
 
     @property
