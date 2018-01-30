@@ -2,6 +2,7 @@
 import hashlib
 from datetime import datetime
 from pathlib import Path
+from pprint import pprint
 
 from behappy.conf import settings
 from behappy.resize import ResizeOptions
@@ -61,9 +62,12 @@ class Image:
     def _hash_for(self, content):
         return hashlib.sha1(bytes(content, encoding='utf-8')).hexdigest()
 
+    def __repr__(self):
+        return str(self.__dict__)
+
 
 class ImageSet:
-    def __init__(self, path, thumbnail, include, exclude):
+    def __init__(self, path, thumbnail, include, exclude, sortby):
         """
         :type path: pathlib.Path
         """
@@ -71,6 +75,7 @@ class ImageSet:
         self.thumbnail_path = thumbnail
         self.include = self._split(include)
         self.exclude = self._split(exclude)
+        self.sortby = sortby
 
     def _split(self, value):
         if value:
@@ -82,7 +87,7 @@ class ImageSet:
             if not path.name.startswith('.'):
                 yield path
 
-    def images(self, all=False, sort_by='path'):
+    def images(self, all=False):
         result = set()
         for i in self.include:
             for p in self._filter_hidden(self.path.glob(i)):
@@ -97,7 +102,8 @@ class ImageSet:
             else:
                 raise Exception('Can not find thumbnail: {}'.format(thumbnail))
         images = [Image(p, d) for p, d in read_exif_dates(result)]
-        return sorted(images, key=lambda x: getattr(x, sort_by))
+        pprint(sorted(images, key=lambda x: getattr(x, self.sortby)))
+        return sorted(images, key=lambda x: getattr(x, self.sortby))
 
     @property
     def thumbnail(self):
@@ -108,7 +114,7 @@ class ImageSet:
                 return Image(path, date)
         return None
 
-    def __str__(self):
+    def __repr__(self):
         return str(self.__dict__)
 
 
@@ -126,5 +132,5 @@ class Album:
     def uri(self):
         return '/album/{}/'.format(self.id)
 
-    def __str__(self):
+    def __repr__(self):
         return str(self.__dict__)

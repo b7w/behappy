@@ -127,6 +127,7 @@ class BeHappy:
                     thumbnail=conf.get('images', 'thumbnail'),
                     include=conf.get('images', 'include', fallback=None),
                     exclude=conf.get('images', 'exclude', fallback=None),
+                    sortby=conf.get('images', 'sortby', fallback='date'),
                 )
                 album = Album(
                     id=conf.get('album', 'id'),
