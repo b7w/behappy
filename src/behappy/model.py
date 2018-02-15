@@ -117,13 +117,14 @@ class ImageSet:
 
 
 class Album:
-    def __init__(self, id, parent, title, description, date, path, image_set):
+    def __init__(self, id, parent, title, description, date, tags, path, image_set):
         self.id = id
         self.parent = parent
         self.children = []
         self.title = title
         self.description = description
         self.date = datetime.strptime(date, '%Y-%m-%d').replace(tzinfo=settings.timezone())
+        self.tags = set([i.strip() for i in tags.split(',') if i.strip()])
         self.path = path
         self.image_set = image_set
 

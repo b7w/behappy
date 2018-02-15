@@ -21,8 +21,9 @@ def linebreaksbr_filter(value):
 
 
 class BeHappy:
-    def __init__(self):
+    def __init__(self, tags):
         self.gallery = Gallery(settings.description())
+        self.tags = tags
         self.jinja = Environment(
             loader=PackageLoader('behappy'),
             trim_blocks=True
@@ -135,13 +136,15 @@ class BeHappy:
                     title=conf.get('album', 'title'),
                     description=conf.get('album', 'description'),
                     date=conf.get('album', 'date'),
+                    tags=conf.get('album', 'tags', fallback=''),
                     path=ini.parent,
                     image_set=image_set
                 )
-                self.gallery.add_album(album)
+                if not self.tags or any(i in album.tags for i in self.tags):
+                    self.gallery.add_album(album)
         for album in self.gallery.albums:
             album.children = [i for i in self.gallery.albums if album.id == i.parent]
 
         albums_count = len(self.gallery.albums)
         image_count = sum(len(i.image_set.images(all=True)) for i in self.gallery.albums)
-        print('Found {} albums and {} images'.format(albums_count, image_count))
+        print('Load {} albums and {} images'.format(albums_count, image_count))

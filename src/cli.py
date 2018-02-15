@@ -2,12 +2,12 @@
 import os
 from functools import wraps
 from http.server import HTTPServer, SimpleHTTPRequestHandler
-from time import time
 
 import click
 
 from behappy.conf import settings
 from behappy.main import BeHappy
+from time import time
 
 
 def timeit(f):
@@ -30,14 +30,16 @@ def cli():
 
 @cli.command()
 @click.option('--conf', default='behappy.ini', help='Path to config')
+@click.option('--tags', default='', help='Filter albums by tags')
 @timeit
-def build(conf):
+def build(conf, tags):
     """
     Build static site
     """
     settings.load(conf)
 
-    blog = BeHappy()
+    tags = set([i.strip() for i in tags.split(',') if i.strip()])
+    blog = BeHappy(tags)
     blog.build()
 
 
