@@ -33,8 +33,8 @@ class BeHappy:
 
     def build(self):
         self._load_albums()
-        self._resize_images()
-        self._copy_static_resources()
+        # self._resize_images()
+        # self._copy_static_resources()
         self._render_about_page()
         self._render_index_pages()
         self._render_year_pages()
@@ -75,7 +75,8 @@ class BeHappy:
     def _render_album_pages(self):
         for album in self.gallery.albums():
             if album.children:
-                params = dict(title=album.title, description=album.description, albums=album.children,
+                albums = sorted(album.children, key=lambda x: x.date)
+                params = dict(title=album.title, description=album.description, albums=albums,
                               back=dict(id=album.parent))
                 html = self.jinja.get_template('gallery.jinja2').render(**params,
                                                                         **settings.templates_parameters())
