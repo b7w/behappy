@@ -73,7 +73,7 @@ class BeHappy:
                 f.write(html)
 
     def _render_album_pages(self):
-        for album in self.gallery.albums:
+        for album in self.gallery.albums():
             if album.children:
                 params = dict(title=album.title, description=album.description, albums=album.children,
                               back=dict(id=album.parent))
@@ -102,7 +102,7 @@ class BeHappy:
 
     def _resize_images(self):
         resizer = ImageResizer()
-        for album in self.gallery.albums:
+        for album in self.gallery.albums():
             path = Path('./target/album/{}'.format(album.id))
             path.mkdir(parents=True, exist_ok=True)
             count = 0
@@ -142,9 +142,9 @@ class BeHappy:
                 )
                 if not self.tags or any(i in album.tags for i in self.tags):
                     self.gallery.add_album(album)
-        for album in self.gallery.albums:
-            album.children = [i for i in self.gallery.albums if album.id == i.parent]
+        for album in self.gallery.albums():
+            album.children = [i for i in self.gallery.albums() if album.id == i.parent]
 
-        albums_count = len(self.gallery.albums)
-        image_count = sum(len(i.image_set.images(all=True)) for i in self.gallery.albums)
+        albums_count = len(self.gallery.albums())
+        image_count = sum(len(i.image_set.images(all=True)) for i in self.gallery.albums())
         print('Load {} albums and {} images'.format(albums_count, image_count))

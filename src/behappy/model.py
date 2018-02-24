@@ -11,12 +11,12 @@ from behappy.utils import read_exif_dates
 class Gallery:
     def __init__(self, description):
         self.description = description
-        self.albums = []
+        self._albums = []
         self._ids = {}
 
     def add_album(self, album):
         if album.id not in self._ids:
-            self.albums.append(album)
+            self._albums.append(album)
             self._ids[album.id] = album
         else:
             title = self._ids[album.id].title
@@ -24,11 +24,14 @@ class Gallery:
             msg = 'Gallery already have album "{}" with id {}\n{}\n{}'
             raise Exception(msg.format(title, album.id, path, album.path))
 
+    def albums(self):
+        return sorted(self._albums, key=lambda x: x.date, reverse=True)
+
     def top_years(self):
         return sorted(set(i.date.year for i in self.top_albums()), reverse=True)
 
     def top_albums(self):
-        return [i for i in self.albums if not i.parent]
+        return sorted([i for i in self._albums if not i.parent], key=lambda x: x.date, reverse=True)
 
 
 class Image:
