@@ -15,8 +15,8 @@ class Settings:
         self._conf.read(path)
 
     def source_folders(self):
-        paths = self._conf.get('gallery', 'source').split(',')
-        return [Path(i.strip()) for i in paths]
+        paths = self._conf.get('gallery', 'source').split(';')
+        return [Path(i.strip()) for i in paths if i]
 
     def description(self):
         return self._conf.get('gallery', 'description').strip()

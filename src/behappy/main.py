@@ -115,7 +115,7 @@ class BeHappy:
                         count += 1
                     count_all += 1
 
-            print('[{}] {} of {} conventions'.format(album.title, count, count_all))
+            print('[{}] {} of {} resizes'.format(album.title, count, count_all))
 
     def _load_albums(self):
         for p in settings.source_folders():
