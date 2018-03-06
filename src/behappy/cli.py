@@ -24,11 +24,11 @@ def timeit(f):
 
 
 @click.group()
-def cli():
+def main():
     pass
 
 
-@cli.command()
+@main.command()
 @click.option('--conf', default='behappy.ini', help='Path to config')
 @click.option('--tags', default='', help='Filter albums by tags')
 @timeit
@@ -43,7 +43,7 @@ def build(conf, tags):
     blog.build()
 
 
-@cli.command()
+@main.command()
 def server(port=8000):
     """
     Run test web server
@@ -57,7 +57,7 @@ def server(port=8000):
     httpd.serve_forever()
 
 
-@cli.command()
+@main.command()
 def new():
     """
     Create new album.
@@ -66,4 +66,4 @@ def new():
 
 
 if __name__ == '__main__':
-    cli()
+    main()
