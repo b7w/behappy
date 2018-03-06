@@ -3,3 +3,8 @@
 .idea/
 target/
 tmp/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
