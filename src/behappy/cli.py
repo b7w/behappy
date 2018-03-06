@@ -5,8 +5,8 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 import click
 
-from behappy.conf import settings
-from behappy.main import BeHappy
+from behappy.core.conf import settings
+from behappy.core.main import BeHappy
 from time import time
 
 

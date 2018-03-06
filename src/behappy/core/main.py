@@ -7,9 +7,9 @@ from pathlib import Path
 import pkg_resources
 from jinja2 import Environment, PackageLoader
 
-from behappy.conf import settings
-from behappy.model import Gallery, ImageSet, Album
-from behappy.resize import ResizeOptions, ImageResizer
+from behappy.core.conf import settings
+from behappy.core.model import Gallery, ImageSet, Album
+from behappy.core.resize import ResizeOptions, ImageResizer
 
 
 def date_filter(value, fmt):
@@ -25,7 +25,7 @@ class BeHappy:
         self.gallery = Gallery(settings.description())
         self.tags = tags
         self.jinja = Environment(
-            loader=PackageLoader('behappy'),
+            loader=PackageLoader('behappy.core'),
             trim_blocks=True
         )
         self.jinja.filters['date'] = date_filter
@@ -33,8 +33,8 @@ class BeHappy:
 
     def build(self):
         self._load_albums()
-        # self._resize_images()
-        # self._copy_static_resources()
+        self._resize_images()
+        self._copy_static_resources()
         self._render_about_page()
         self._render_index_pages()
         self._render_year_pages()
@@ -98,7 +98,7 @@ class BeHappy:
     def _copy_static_resources(self):
         for t in ('css', 'img', 'js'):
             shutil.rmtree('./target/{}'.format(t), ignore_errors=True)
-            path = pkg_resources.resource_filename('behappy', 'templates/{}'.format(t))
+            path = pkg_resources.resource_filename('behappy.core', 'templates/{}'.format(t))
             shutil.copytree(path, './target/{}'.format(t))
 
     def _resize_images(self):

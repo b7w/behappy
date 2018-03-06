@@ -3,9 +3,9 @@ import hashlib
 from datetime import datetime
 from pathlib import Path
 
-from behappy.conf import settings
-from behappy.resize import ResizeOptions
-from behappy.utils import read_exif_dates
+from behappy.core.conf import settings
+from behappy.core.resize import ResizeOptions
+from behappy.core.utils import read_exif_dates
 
 
 class Gallery:
