@@ -18,5 +18,5 @@ setup(
     license='MIT',
     author='B7W',
     author_email='b7w@isudo.ru',
-    description=open('readme.md').read(),
+    description=open('README.md').read(),
 )
