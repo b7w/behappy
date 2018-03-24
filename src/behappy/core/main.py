@@ -35,6 +35,7 @@ class BeHappy:
         self._load_albums()
         self._resize_images()
         self._copy_static_resources()
+        self._write_robots()
         self._render_about_page()
         self._render_index_pages()
         self._render_year_pages()
@@ -100,6 +101,13 @@ class BeHappy:
             shutil.rmtree('./target/{}'.format(t), ignore_errors=True)
             path = pkg_resources.resource_filename('behappy.core', 'templates/{}'.format(t))
             shutil.copytree(path, './target/{}'.format(t))
+
+    def _write_robots(self):
+        with open('./target/robots.txt', mode='w') as f:
+            f.writelines([
+                'User-agent: *',
+                'Disallow: /',
+            ])
 
     def _resize_images(self):
         resizer = ImageResizer()
