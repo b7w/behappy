@@ -105,8 +105,8 @@ class BeHappy:
     def _write_robots(self):
         with open('./target/robots.txt', mode='w') as f:
             f.writelines([
-                'User-agent: *',
-                'Disallow: /',
+                'User-agent: *\n',
+                'Disallow: /\n',
             ])
 
     def _resize_images(self):
