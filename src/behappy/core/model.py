@@ -52,8 +52,8 @@ class Image:
         cache_name = self._cache_name(size_options)
         return Path('/album/{}/{}/{}.jpg'.format(album_id, size_options.name, cache_name))
 
-    def cache_path(self, album_id, size_options):
-        return Path('./target', Path(self.uri(album_id, size_options.name)).relative_to('/'))
+    def cache_path(self, target, album_id, size_options):
+        return Path(target, Path(self.uri(album_id, size_options.name)).relative_to('/'))
 
     def _cache_name(self, size_options):
         option_pack = tuple()

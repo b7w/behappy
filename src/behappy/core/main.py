@@ -21,8 +21,9 @@ def linebreaksbr_filter(value):
 
 
 class BeHappy:
-    def __init__(self, tags):
+    def __init__(self, target, tags):
         self.gallery = Gallery(settings.description())
+        self.target = target
         self.tags = tags
         self.jinja = Environment(
             loader=PackageLoader('behappy.core'),
@@ -45,7 +46,7 @@ class BeHappy:
     def _render_about_page(self):
         html = self.jinja.get_template('about.jinja2').render(**settings.templates_parameters(),
                                                               **settings.about())
-        folder = Path('./target/about')
+        folder = Path(self.target, 'about')
         folder.mkdir(parents=True, exist_ok=True)
         with open(Path(folder, 'index.html'), mode='w') as f:
             f.write(html)
@@ -55,7 +56,7 @@ class BeHappy:
                       years=self.gallery.top_years())
         html = self.jinja.get_template('gallery.jinja2').render(**params,
                                                                 **settings.templates_parameters())
-        with open('./target/index.html', mode='w') as f:
+        with Path(self.target, 'index.html').open(mode='w') as f:
             f.write(html)
 
     def _render_year_pages(self):
@@ -68,7 +69,7 @@ class BeHappy:
                           current_year=year)
             html = self.jinja.get_template('gallery.jinja2').render(**params,
                                                                     **settings.templates_parameters())
-            folder = Path('./target/year/{}'.format(year))
+            folder = Path(self.target, 'year', str(year))
             folder.mkdir(parents=True, exist_ok=True)
             with open(Path(folder, 'index.html').as_posix(), mode='w') as f:
                 f.write(html)
@@ -85,25 +86,26 @@ class BeHappy:
                 params = dict(album=album, images=album.image_set.images(), back=dict(id=album.parent))
                 html = self.jinja.get_template('album.jinja2').render(**params,
                                                                       **settings.templates_parameters())
-            with open('./target/album/{}/index.html'.format(album.id), mode='w') as f:
+            with Path(self.target, 'album', str(album.id), 'index.html').open(mode='w') as f:
                 f.write(html)
 
     def _render_error_page(self, name, title, message):
         html = self.jinja.get_template('message.jinja2').render(title=title, message=message,
                                                                 **settings.templates_parameters())
-        folder = Path('./target/error')
+        folder = Path(self.target, 'error')
         folder.mkdir(parents=True, exist_ok=True)
         with open(Path(folder, '{}.html'.format(name)), mode='w') as f:
             f.write(html)
 
     def _copy_static_resources(self):
         for t in ('css', 'img', 'js'):
-            shutil.rmtree('./target/{}'.format(t), ignore_errors=True)
-            path = pkg_resources.resource_filename('behappy.core', 'templates/{}'.format(t))
-            shutil.copytree(path, './target/{}'.format(t))
+            path = Path(self.target, t).as_posix()
+            shutil.rmtree(path, ignore_errors=True)
+            path_from = pkg_resources.resource_filename('behappy.core', 'templates/{}'.format(t))
+            shutil.copytree(path_from, path)
 
     def _write_robots(self):
-        with open('./target/robots.txt', mode='w') as f:
+        with Path(self.target, 'robots.txt').open(mode='w') as f:
             f.writelines([
                 'User-agent: *\n',
                 'Disallow: /\n',
@@ -112,14 +114,15 @@ class BeHappy:
     def _resize_images(self):
         resizer = ImageResizer()
         for album in self.gallery.albums():
-            path = Path('./target/album/{}'.format(album.id))
+            path = Path(self.target, 'album', str(album.id))
             path.mkdir(parents=True, exist_ok=True)
             count = 0
             count_all = 0
             for image in album.image_set.images(all=True):
                 for name, size in settings.image_sizes().items():
                     option = ResizeOptions.from_settings(size, name)
-                    r = resizer.resize(image.path, image.cache_path(album.id, option), option)
+                    cache_path = image.cache_path(self.target, album.id, option)
+                    r = resizer.resize(image.path, cache_path, option)
                     if r:
                         count += 1
                     count_all += 1

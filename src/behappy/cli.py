@@ -2,12 +2,12 @@
 import os
 from functools import wraps
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+from time import time
 
 import click
 
 from behappy.core.conf import settings
 from behappy.core.main import BeHappy
-from time import time
 
 
 def timeit(f):
@@ -29,30 +29,33 @@ def main():
 
 
 @main.command()
+@click.option('--target', default='target', help='Path to build folder')
 @click.option('--conf', default='behappy.ini', help='Path to config')
 @click.option('--tags', default='', help='Filter albums by tags')
 @timeit
-def build(conf, tags):
+def build(target, conf, tags):
     """
     Build static site
     """
     settings.load(conf)
 
     tags = set([i.strip() for i in tags.split(',') if i.strip()])
-    blog = BeHappy(tags)
+    blog = BeHappy(target, tags)
     blog.build()
 
 
 @main.command()
-def server(port=8000):
+@click.option('--target', default='target', help='Path to build folder')
+@click.option('--port', default='8000', help='Path to build folder')
+def server(target, port):
     """
     Run test web server
     """
-    if not os.path.exists('target'):
-        os.mkdir('target')
-    os.chdir('target')
+    if not os.path.exists(target):
+        os.mkdir(target)
+    os.chdir(target)
 
-    httpd = HTTPServer(('0.0.0.0', port), SimpleHTTPRequestHandler)
+    httpd = HTTPServer(('0.0.0.0', int(port)), SimpleHTTPRequestHandler)
     print('# server at http://127.0.0.1:{0}'.format(port))
     httpd.serve_forever()
 
