@@ -2,14 +2,17 @@
 import configparser
 import itertools
 import shutil
+from datetime import datetime
 from pathlib import Path
 
 import pkg_resources
+from dateutil.parser import parse
 from jinja2 import Environment, PackageLoader
 
 from behappy.core.conf import settings
 from behappy.core.model import Gallery, ImageSet, Album
 from behappy.core.resize import ResizeOptions, ImageResizer
+from behappy.core.utils import uid
 
 
 def date_filter(value, fmt):
@@ -18,6 +21,48 @@ def date_filter(value, fmt):
 
 def linebreaksbr_filter(value):
     return value.replace('\n', '<br/>')
+
+
+class BeHappyFile:
+    def __init__(self, folder):
+        """
+        :type folder: Path
+        """
+        self.folder = folder
+
+    def new(self):
+        with Path(self.folder, 'behappy.ini').open(mode='w') as f:
+            title = self._title()
+            date = self._parse_or_now()
+            thumbnail = self._first_image()
+            config = self._create(title, date, thumbnail)
+            config.write(f)
+
+    def _create(self, title, date, thumbnail):
+        config = configparser.ConfigParser()
+        config['album'] = dict(id=uid(), title=title, description='', date=date, tags='review')
+        config['images'] = dict(thumbnail=thumbnail, include='*.jpg', exclude='')
+        return config
+
+    def _title(self):
+        try:
+            _, value = self.folder.name.split(' - ')
+            return value.strip()
+        except Exception:
+            return ''
+
+    def _parse_or_now(self):
+        try:
+            value, _ = self.folder.name.split(' - ')
+            return parse(value.strip()).strftime('%Y-%m-%d')
+        except Exception:
+            print('Cannot parse time, set now')
+            return datetime.now().strftime('%Y-%m-%d')
+
+    def _first_image(self):
+        for i in self.folder.glob('*.jpg'):
+            return i.name
+        return ''
 
 
 class BeHappy:

@@ -2,12 +2,13 @@
 import os
 from functools import wraps
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+from pathlib import Path
 from time import time
 
 import click
 
 from behappy.core.conf import settings
-from behappy.core.main import BeHappy
+from behappy.core.main import BeHappy, BeHappyFile
 
 
 def timeit(f):
@@ -65,7 +66,9 @@ def new():
     """
     Create new album.
     """
-    pass
+    folder = Path('.').absolute()
+    file = BeHappyFile(folder)
+    file.new()
 
 
 if __name__ == '__main__':
