@@ -40,7 +40,7 @@ class BeHappyFile:
 
     def _create(self, title, date, thumbnail):
         config = configparser.ConfigParser()
-        config['album'] = dict(id=uid(), title=title, description='', date=date, tags='review')
+        config['album'] = dict(id=uid(), title=title, description='', date=date, tags='private')
         config['images'] = dict(thumbnail=thumbnail, include='*.jpg', exclude='')
         return config
 
