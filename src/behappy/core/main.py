@@ -135,7 +135,7 @@ class BeHappy:
                                                               **settings.about())
         folder = Path(self.target, 'about')
         folder.mkdir(parents=True, exist_ok=True)
-        with open(Path(folder, 'index.html'), mode='w') as f:
+        with Path(folder, 'index.html').open(mode='w') as f:
             f.write(html)
 
     def _render_index_pages(self):
@@ -158,7 +158,7 @@ class BeHappy:
                                                                     **settings.templates_parameters())
             folder = Path(self.target, 'year', str(year))
             folder.mkdir(parents=True, exist_ok=True)
-            with open(Path(folder, 'index.html').as_posix(), mode='w') as f:
+            with Path(folder, 'index.html').open(mode='w') as f:
                 f.write(html)
 
     def _render_album_pages(self):
@@ -181,7 +181,7 @@ class BeHappy:
                                                                 **settings.templates_parameters())
         folder = Path(self.target, 'error')
         folder.mkdir(parents=True, exist_ok=True)
-        with open(Path(folder, '{}.html'.format(name)), mode='w') as f:
+        with Path(folder, '{}.html'.format(name)).open(mode='w') as f:
             f.write(html)
 
     def _copy_static_resources(self):
