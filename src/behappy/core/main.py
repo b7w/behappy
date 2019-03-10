@@ -103,7 +103,7 @@ class BeHappySync:
 
     def _s3_upload(self, key):
         file = Path(self.folder, key).as_posix()
-        content_type = mimetypes.types_map.get('.jpg', 'text/html')
+        content_type = mimetypes.types_map.get('.jpg', 'application/octet-stream')
         self._bucket.upload_file(file, key, ExtraArgs={'ContentType': content_type})
 
 
