@@ -103,7 +103,7 @@ class ImageSet:
                 result.add(thumbnail.absolute())
             else:
                 raise Exception('Can not find thumbnail: {}'.format(thumbnail))
-        images = [Image(p, d) for p, d in read_exif_dates(result)]
+        images = [Image(p, d) for p, d in read_exif_dates(list(result))]
         return sorted(images, key=lambda x: getattr(x, self.sortby))
 
     @property
