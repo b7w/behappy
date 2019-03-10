@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import configparser
 import itertools
+import mimetypes
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -81,17 +82,17 @@ class BeHappySync:
         print('Load {} s3 objects and {} local files'.format(len(objects), len(files)))
 
         # upload new album/*.jpg
-        new_images = set(i for i in files if i.endswith('.jpg')) - set(
-            i.key for i in objects if i.key.endswith('.jpg'))
+        new_images = set(i for i in files if i.endswith('.jpg')) - \
+                     set(i.key for i in objects if i.key.endswith('.jpg'))
         print('{} images for upload: {}'.format(len(new_images), ','.join(new_images)))
         for i in new_images:
-            self._bucket.upload_file(Path(self.folder, i).as_posix(), i)
+            self._s3_upload(i)
 
         # upload other
         other = set(i for i in files if not i.endswith('.jpg'))
         print('{} files for upload: {}'.format(len(other), ', '.join(other)))
         for i in other:
-            self._bucket.upload_file(Path(self.folder, i).as_posix(), i)
+            self._s3_upload(i)
 
         # delete removed files
         for_delete = set(i.key for i in objects) - set(files)
@@ -99,6 +100,11 @@ class BeHappySync:
         for i in objects:
             if i.key in for_delete:
                 i.delete()
+
+    def _s3_upload(self, key):
+        file = Path(self.folder, key).as_posix()
+        content_type = mimetypes.types_map.get('.jpg', 'text/html')
+        self._bucket.upload_file(file, key, ExtraArgs={'ContentType': content_type})
 
 
 class BeHappy:
