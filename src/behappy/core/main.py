@@ -102,9 +102,9 @@ class BeHappySync:
                 i.delete()
 
     def _s3_upload(self, key):
-        file = Path(self.folder, key).as_posix()
-        content_type = mimetypes.types_map.get('.jpg', 'application/octet-stream')
-        self._bucket.upload_file(file, key, ExtraArgs={'ContentType': content_type})
+        file = Path(self.folder, key)
+        content_type = mimetypes.types_map.get(file.suffix, 'application/octet-stream')
+        self._bucket.upload_file(file.as_posix(), key, ExtraArgs={'ContentType': content_type})
 
 
 class BeHappy:
