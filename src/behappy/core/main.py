@@ -5,6 +5,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
+import boto3
 import pkg_resources
 from dateutil.parser import parse
 from jinja2 import Environment, PackageLoader
@@ -63,6 +64,41 @@ class BeHappyFile:
         for i in self.folder.glob('*.jpg'):
             return i.name
         return ''
+
+
+class BeHappySync:
+    def __init__(self, folder, profile, bucket):
+        """
+        :type folder: Path
+        """
+        self.folder = folder
+        self._bucket = boto3.session.Session(profile_name=profile).resource('s3').Bucket(name=bucket)
+
+    def s3(self):
+        objects = list(self._bucket.objects.all())
+        files = [i.relative_to(self.folder).as_posix() for i in self.folder.glob('**/*') if
+                 i.is_file() and not i.name.startswith('.')]
+        print('Load {} s3 objects and {} local files'.format(len(objects), len(files)))
+
+        # upload new album/*.jpg
+        new_images = set(i for i in files if i.endswith('.jpg')) - set(
+            i.key for i in objects if i.key.endswith('.jpg'))
+        print('{} images for upload: {}'.format(len(new_images), ','.join(new_images)))
+        for i in new_images:
+            self._bucket.upload_file(Path(self.folder, i).as_posix(), i)
+
+        # upload other
+        other = set(i for i in files if not i.endswith('.jpg'))
+        print('{} files for upload: {}'.format(len(other), ', '.join(other)))
+        for i in other:
+            self._bucket.upload_file(Path(self.folder, i).as_posix(), i)
+
+        # delete removed files
+        for_delete = set(i.key for i in objects) - set(files)
+        print('{} files for delete: {}'.format(len(for_delete), ', '.join(for_delete)))
+        for i in objects:
+            if i.key in for_delete:
+                i.delete()
 
 
 class BeHappy:

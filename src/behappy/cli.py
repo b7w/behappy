@@ -8,7 +8,7 @@ from time import time
 import click
 
 from behappy.core.conf import settings
-from behappy.core.main import BeHappy, BeHappyFile
+from behappy.core.main import BeHappy, BeHappyFile, BeHappySync
 
 
 def timeit(f):
@@ -69,6 +69,20 @@ def new():
     folder = Path('.').absolute()
     file = BeHappyFile(folder)
     file.new()
+
+
+@main.command()
+@click.option('--target', default='target', help='Path to build folder')
+@click.option('--profile', default='root', help='AWS profile')
+@click.option('--bucket', help='AWS S3 bucket name')
+@timeit
+def sync(target, profile, bucket):
+    """
+    Run test web server
+    """
+    folder = Path(target)
+    be_sync = BeHappySync(folder, profile, bucket)
+    be_sync.s3()
 
 
 if __name__ == '__main__':
