@@ -35,13 +35,14 @@ class Gallery:
 
 
 class Image:
-    def __init__(self, path, date):
+    def __init__(self, path, date, orientation):
         """
        :type path: pathlib.Path
        :type date: datetime.datetime
        """
         self.path = path
         self.date = date
+        self.orientation = orientation
 
     @property
     def id(self):
@@ -59,6 +60,7 @@ class Image:
         option_pack = tuple()
         option_pack += (size_options.height, size_options.width, size_options.quality, size_options.crop)
         option_pack += (size_options.name, self.path.absolute().as_posix(), self.path.stat().st_ctime,)
+        option_pack += (self.orientation,)
         return self._hash_for(str(option_pack))
 
     def _hash_for(self, content):
@@ -103,7 +105,7 @@ class ImageSet:
                 result.add(thumbnail.absolute())
             else:
                 raise Exception('Can not find thumbnail: {}'.format(thumbnail))
-        images = [Image(p, d) for p, d in read_exif_dates(list(result))]
+        images = [Image(p, d, o) for p, d, o in read_exif_dates(list(result))]
         return sorted(images, key=lambda x: getattr(x, self.sortby))
 
     @property
@@ -111,8 +113,8 @@ class ImageSet:
         if self.thumbnail_path:
             thumbnail = Path(self.path, self.thumbnail_path)
             if thumbnail.exists():
-                path, date = read_exif_dates([thumbnail.absolute()])[0]
-                return Image(path, date)
+                path, date, o = read_exif_dates([thumbnail.absolute()])[0]
+                return Image(path, date, o)
         return None
 
     def __repr__(self):

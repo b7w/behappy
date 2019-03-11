@@ -43,13 +43,16 @@ class ResizeOptions(object):
             .format(w=self.width, h=self.height, c=self.crop, q=self.quality, n=self.name)
 
 
-class ResizeImage(object):
+class BetterImage(object):
     """
-    Get file with image. Resize, crop it.
+    Get file with image. Resize, rotate, crop it.
     """
+    ORIENTATION_KEY = 274  # cf ExifTags
+    ORIENTATION_VALUES = {3: 180, 6: 270, 8: 90}
 
-    def __init__(self, filein):
+    def __init__(self, filein, orientation):
         self.file = Image.open(filein)
+        self.orientation = orientation
         if self.file.mode not in ('L', 'RGB'):
             self.file = self.file.convert('RGB')
         self.type = 'JPEG'
@@ -80,6 +83,10 @@ class ResizeImage(object):
         """
         self.file = self.file.crop((x_offset, y_offset, width, height))
 
+    def rotate(self):
+        if self.need_rotate():
+            self.file = self.file.rotate(self.orientation)
+
     def crop_center(self, width, height):
         """
         Cut out an image with `width` and `height` of the center
@@ -105,6 +112,9 @@ class ResizeImage(object):
         Is this image bigger that `width` or `height`
         """
         return self.width > width or self.height > height
+
+    def need_rotate(self):
+        return self.orientation != 0
 
     def scale_min_size(self, value):
         """
@@ -173,11 +183,11 @@ class CacheImage(object):
 
 
 class ImageResizer:
-    def resize(self, from_path, to_path, option):
+    def resize(self, from_path, to_path, option, orientation):
         if not to_path.exists():
             to_path.parent.mkdir(parents=True, exist_ok=True)
             with from_path.open(mode='rb') as fin:
-                resize_image = ResizeImage(fin)
+                resize_image = BetterImage(fin, orientation)
                 bigger = resize_image.is_bigger(option.width, option.height)
                 if bigger:
                     if option.crop:
@@ -187,10 +197,13 @@ class ImageResizer:
                     else:
                         w, h = resize_image.scale_to(option.width, option.height)
                         resize_image.resize(w, h)
+
+                if resize_image.need_rotate():
+                    resize_image.rotate()
+
+                if bigger or resize_image.need_rotate():
                     with to_path.open(mode='wb') as fout:
                         resize_image.save_to(fout, option.quality)
-
-                    logger.debug('resize \'%s\' with %s', from_path, option)
                 else:
                     shutil.copy2(from_path.as_posix(), to_path.as_posix())
 

@@ -209,7 +209,7 @@ class BeHappy:
                 for name, size in settings.image_sizes().items():
                     option = ResizeOptions.from_settings(size, name)
                     cache_path = image.cache_path(self.target, album.id, option)
-                    r = resizer.resize(image.path, cache_path, option)
+                    r = resizer.resize(image.path, cache_path, option, image.orientation)
                     if r:
                         count += 1
                     count_all += 1
