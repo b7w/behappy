@@ -24,22 +24,20 @@ def memoize(func):
     return memoized_func
 
 
-def orientation(value):
-    if value:
-        name2angle = {
-            'Rotate 180': 180,
-            'Rotate 90 CW': 270,
-            'Rotate 270 CW': 90,
-        }
-        return name2angle.get(value, 0)
-    return 0
+def parse_orientation(value):
+    name2angle = {
+        'Rotate 180': 180,
+        'Rotate 90 CW': 270,
+        'Rotate 270 CW': 90,
+    }
+    return name2angle.get(value, 0)
 
 
 @memoize
 def read_exif_dates(paths):
-    cmd = 'exiftool -datetimeoriginal -cameraorientation -json -quiet'.split() + [i.as_posix() for i in paths]
+    cmd = 'exiftool -datetimeoriginal -orientation -json -quiet'.split() + [i.as_posix() for i in paths]
     exif = json.loads(subprocess.check_output(cmd).decode('utf-8').rstrip('\r\n'))
-    return [(Path(i['SourceFile']), parse_exif_date(i.get('DateTimeOriginal')), orientation(i.get('CameraOrientation')))
+    return [(Path(i['SourceFile']), parse_exif_date(i.get('DateTimeOriginal')), parse_orientation(i.get('Orientation')))
             for i in exif if i.get('DateTimeOriginal')]
 
 

@@ -152,36 +152,6 @@ class BetterImage(object):
         self.file.save(fout, self.type, quality=quality)
 
 
-class CacheImage(object):
-    """
-    It is a facade for Resize image that resize images and cache it in `settings.VIEWER_CACHE_PATH`
-    """
-
-    def __init__(self, image):
-        self.image = image
-        self.options = image.options
-
-    def process(self):
-        """
-        Get image from storage and save it to cache. If image is to big, resize. If to small, link.
-        If cache already exists, do nothing
-        """
-        if not self.image.cache_exists:
-            with self.image.open() as fin:
-                resize_image = ResizeImage(fin)
-                if self.options.crop:
-                    w, h = resize_image.scale_min_size(self.options.size)
-                    resize_image.resize(w, h)
-                    resize_image.crop_center(self.options.width, self.options.height)
-                else:
-                    w, h = resize_image.scale_to(self.options.width, self.options.height)
-                    resize_image.resize(w, h)
-                with self.image.cache_open() as fout:
-                    resize_image.save_to(fout, self.options.quality)
-
-                logger.debug('resize \'%s\' with %s', self.image.path, self.options)
-
-
 class ImageResizer:
     def resize(self, from_path, to_path, option, orientation):
         if not to_path.exists():
