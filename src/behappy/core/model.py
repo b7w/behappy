@@ -61,7 +61,7 @@ class Image:
         option_pack += (size_options.height, size_options.width, size_options.quality, size_options.crop)
         option_pack += (size_options.name, self.path.absolute().as_posix(), self.path.stat().st_ctime,)
         if self.orientation:
-            option_pack += (self.orientation,)
+            option_pack += ('orientation', self.orientation,)
         return self._hash_for(str(option_pack))
 
     def _hash_for(self, content):
