@@ -26,9 +26,9 @@ def memoize(func):
 
 def parse_orientation(value):
     name2angle = {
-        'Rotate 180': 180,
-        'Rotate 90 CW': 270,
-        'Rotate 270 CW': 90,
+        'Rotate 180': 180,  # N3
+        'Rotate 90 CW': 270,  # N6
+        'Rotate 270 CW': 90,  # N8
     }
     return name2angle.get(value, 0)
 

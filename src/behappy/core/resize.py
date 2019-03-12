@@ -47,8 +47,6 @@ class BetterImage(object):
     """
     Get file with image. Resize, rotate, crop it.
     """
-    ORIENTATION_KEY = 274  # cf ExifTags
-    ORIENTATION_VALUES = {3: 180, 6: 270, 8: 90}
 
     def __init__(self, filein, orientation):
         self.file = Image.open(filein)
@@ -85,7 +83,12 @@ class BetterImage(object):
 
     def rotate(self):
         if self.need_rotate():
-            self.file = self.file.rotate(self.orientation)
+            angel2const = {
+                90: Image.ROTATE_90,
+                180: Image.ROTATE_180,
+                270: Image.ROTATE_270,
+            }
+            self.file = self.file.transpose(angel2const[self.orientation])
 
     def crop_center(self, width, height):
         """
