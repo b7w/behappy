@@ -1,27 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
-from functools import wraps
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
-from time import time
 
 import click
 
 from behappy.core.conf import settings
 from behappy.core.main import BeHappy, BeHappyFile, BeHappySync
-
-
-def timeit(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        start = time()
-        try:
-            f(*args, **kwargs)
-        finally:
-            elapsed = int(time() - start)
-            print('## {0} complete in {1:d} min {2:d} sec'.format(f.__name__, elapsed // 60, elapsed % 60))
-
-    return wrapper
+from behappy.core.utils import timeit
 
 
 @click.group()

@@ -5,6 +5,24 @@ import subprocess
 import uuid
 from datetime import datetime
 from pathlib import Path
+from time import time_ns
+
+
+def timeit(f):
+    msg = '## {0} complete in {1:.0f} min {2:.1f} sec ({3}ns)'
+
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        start = time_ns()
+        try:
+            return f(*args, **kwargs)
+        finally:
+            elapsed = time_ns() - start
+            elapsed_sec = elapsed / 10 ** 9
+
+            print(msg.format(f.__name__, elapsed_sec // 60, elapsed_sec % 60, elapsed))
+
+    return wrapper
 
 
 def parse_exif_date(value):
@@ -34,6 +52,7 @@ def parse_orientation(value):
 
 
 @memoize
+@timeit
 def read_exif_dates(paths):
     cmd = 'exiftool -datetimeoriginal -orientation -json -quiet'.split() + [i.as_posix() for i in paths]
     exif = json.loads(subprocess.check_output(cmd).decode('utf-8').rstrip('\r\n'))
