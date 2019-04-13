@@ -4,6 +4,7 @@ import itertools
 import mimetypes
 import shutil
 from datetime import datetime
+from multiprocessing.pool import Pool
 from pathlib import Path
 
 import boto3
@@ -23,6 +24,14 @@ def date_filter(value, fmt):
 
 def linebreaksbr_filter(value):
     return value.replace('\n', '<br/>')
+
+
+def _resize_image(img, cache_path, option):
+    resizer = ImageResizer()
+    r = resizer.resize(img.path, cache_path, option, img.orientation)
+    if r:
+        return 1
+    return 0
 
 
 class BeHappyFile:
@@ -199,22 +208,19 @@ class BeHappy:
             ])
 
     def _resize_images(self):
-        resizer = ImageResizer()
-        for album in self.gallery.albums():
-            path = Path(self.target, 'album', str(album.id))
-            path.mkdir(parents=True, exist_ok=True)
-            count = 0
-            count_all = 0
-            for image in album.image_set.images(all=True):
-                for name, size in settings.image_sizes().items():
-                    option = ResizeOptions.from_settings(size, name)
-                    cache_path = image.cache_path(self.target, album.id, option)
-                    r = resizer.resize(image.path, cache_path, option, image.orientation)
-                    if r:
-                        count += 1
-                    count_all += 1
+        with Pool() as pool:
+            for album in self.gallery.albums():
+                path = Path(self.target, 'album', str(album.id))
+                path.mkdir(parents=True, exist_ok=True)
+                tasks = []
+                for image in album.image_set.images(all=True):
+                    for name, size in settings.image_sizes().items():
+                        option = ResizeOptions.from_settings(size, name)
+                        cache_path = image.cache_path(self.target, album.id, option)
+                        tasks.append((image, cache_path, option,))
+                result = pool.starmap(_resize_image, tasks)
 
-            print('[{}] {} of {} resizes'.format(album.title, count, count_all))
+                print('[{}] {} of {} resizes'.format(album.title, sum(result), len(result)))
 
     def _load_albums(self):
         for p in settings.source_folders():
