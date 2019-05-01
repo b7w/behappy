@@ -61,14 +61,17 @@ def new():
 @click.option('--target', default='target', help='Path to build folder')
 @click.option('--profile', default='root', help='AWS profile')
 @click.option('--bucket', help='AWS S3 bucket name')
+@click.option('--cloudfront', default=None, help='AWS cloudfront distribution id')
 @timeit
-def sync(target, profile, bucket):
+def sync(target, profile, bucket, cloudfront):
     """
     Run test web server
     """
     folder = Path(target)
     be_sync = BeHappySync(folder, profile, bucket)
-    be_sync.s3()
+    # be_sync.s3()
+    if cloudfront:
+        be_sync.cloudfront_invalidate(cloudfront)
 
 
 if __name__ == '__main__':

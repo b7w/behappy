@@ -82,7 +82,9 @@ class BeHappySync:
         :type folder: Path
         """
         self.folder = folder
-        self._bucket = boto3.session.Session(profile_name=profile).resource('s3').Bucket(name=bucket)
+        self._session = boto3.session.Session(profile_name=profile)
+        self._bucket = self._session.resource('s3').Bucket(name=bucket)
+        self._cloudfront = self._session.client('cloudfront')
 
     def s3(self):
         objects = list(self._bucket.objects.all())
@@ -109,6 +111,22 @@ class BeHappySync:
         for i in objects:
             if i.key in for_delete:
                 i.delete()
+
+    def cloudfront_invalidate(self, distribution_id):
+        files = [i.relative_to(self.folder).as_posix() for i in self.folder.glob('**/*.html') if
+                 i.is_file() and not i.name.startswith('.')]
+        print('Find {} html files'.format(len(files)))
+        print('\n'.join(files))
+        self._cloudfront.create_invalidation(
+            DistributionId=distribution_id,
+            InvalidationBatch={
+                'Paths': {
+                    'Quantity': len(files),
+                    'Items': ['/{}'.format(f) for f in files]
+                },
+                'CallerReference': 'my-references-{}'.format(datetime.now())
+            }
+        )
 
     def _s3_upload(self, key):
         file = Path(self.folder, key)
