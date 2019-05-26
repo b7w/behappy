@@ -69,8 +69,10 @@ def sync(target, profile, bucket, cloudfront):
     """
     folder = Path(target)
     be_sync = BeHappySync(folder, profile, bucket)
-    # be_sync.s3()
+    print('Sync S3')
+    be_sync.s3()
     if cloudfront:
+        print('Invalidate CloudFront')
         be_sync.cloudfront_invalidate(cloudfront)
 
 
