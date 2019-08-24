@@ -272,6 +272,7 @@ class BeHappy:
         albums_count = len(self.gallery.albums())
         image_count = sum(len(i.image_set.images(all=True)) for i in self.gallery.albums())
         print('Load {} albums and {} images'.format(albums_count, image_count))
-        print('Find {} hidden albums:'.format(len(self.gallery.top_hidden_albums())))
-        for album in self.gallery.top_hidden_albums():
-            print('\t{} [{}] {} images'.format(album.id, album.title, len(album.image_set.images())))
+        if self.gallery.top_hidden_albums():
+            print('Find {} hidden albums:'.format(len(self.gallery.top_hidden_albums())))
+            for album in self.gallery.top_hidden_albums():
+                print('\t{} [{}] {} images'.format(album.id, album.title, len(album.image_set.images())))
