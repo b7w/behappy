@@ -31,7 +31,10 @@ class Gallery:
         return sorted(set(i.date.year for i in self.top_albums()), reverse=True)
 
     def top_albums(self):
-        return sorted([i for i in self._albums if not i.parent], key=lambda x: x.date, reverse=True)
+        return sorted([i for i in self._albums if not i.parent and not i.hidden], key=lambda x: x.date, reverse=True)
+
+    def top_hidden_albums(self):
+        return sorted([i for i in self._albums if not i.parent and i.hidden], key=lambda x: x.date, reverse=True)
 
 
 class Image:
@@ -123,7 +126,7 @@ class ImageSet:
 
 
 class Album:
-    def __init__(self, id, parent, title, description, date, tags, path, image_set):
+    def __init__(self, id, parent, title, description, date, tags, hidden, path, image_set):
         self.id = id
         self.parent = parent
         self.children = []
@@ -131,6 +134,7 @@ class Album:
         self.description = description
         self.date = datetime.strptime(date, '%Y-%m-%d').replace(tzinfo=settings.timezone())
         self.tags = set([i.strip() for i in tags.split(',') if i.strip()])
+        self.hidden = hidden
         self.path = path
         self.image_set = image_set
 
