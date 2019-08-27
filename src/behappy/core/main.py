@@ -136,7 +136,7 @@ class BeHappySync:
 
 class BeHappy:
     def __init__(self, target, tags):
-        self.gallery = Gallery(settings.description())
+        self.gallery = Gallery(settings.title(), settings.description())
         self.target = target
         self.tags = tags
         self.jinja = Environment(
@@ -145,6 +145,7 @@ class BeHappy:
         )
         self.jinja.filters['date'] = date_filter
         self.jinja.filters['linebreaksbr'] = linebreaksbr_filter
+        self.jinja.globals['now'] = datetime.now()
 
     def build(self):
         self._load_albums()
@@ -152,7 +153,7 @@ class BeHappy:
         self._copy_static_resources()
         self._write_robots()
         self._render_about_page()
-        self._render_index_pages()
+        self._render_index_page()
         self._render_year_pages()
         self._render_album_pages()
         self._render_error_page(name='404', title='404', message='Page not found')
@@ -165,8 +166,11 @@ class BeHappy:
         with Path(folder, 'index.html').open(mode='w') as f:
             f.write(html)
 
-    def _render_index_pages(self):
-        params = dict(title='Welcome', description=self.gallery.description, albums=self.gallery.top_albums(),
+    def _render_index_page(self):
+        params = dict(title=self.gallery.title,
+                      html_title='',
+                      description=self.gallery.description,
+                      albums=self.gallery.top_albums(),
                       years=self.gallery.top_years())
         html = self.jinja.get_template('gallery.jinja2').render(**params,
                                                                 **settings.templates_parameters())
@@ -178,7 +182,10 @@ class BeHappy:
         for album in self.gallery.top_albums():
             groped.setdefault(album.date.year, []).append(album)
         for year, albums in groped.items():
-            params = dict(title='Welcome', description=self.gallery.description, albums=albums,
+            params = dict(title=self.gallery.title,
+                          html_title='Year {}'.format(year),
+                          description=self.gallery.description,
+                          albums=albums,
                           years=self.gallery.top_years(),
                           current_year=year)
             html = self.jinja.get_template('gallery.jinja2').render(**params,
@@ -192,7 +199,10 @@ class BeHappy:
         for album in self.gallery.albums():
             if album.children:
                 albums = sorted(album.children, key=lambda x: x.date)
-                params = dict(title=album.title, description=album.description, albums=albums,
+                params = dict(title=album.title,
+                              html_title=album.title,
+                              description=album.description,
+                              albums=albums,
                               back=dict(id=album.parent))
                 html = self.jinja.get_template('gallery.jinja2').render(**params,
                                                                         **settings.templates_parameters())

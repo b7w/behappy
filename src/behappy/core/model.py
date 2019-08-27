@@ -9,7 +9,8 @@ from behappy.core.utils import read_exif_dates
 
 
 class Gallery:
-    def __init__(self, description):
+    def __init__(self, title, description):
+        self.title = title
         self.description = description
         self._albums = []
         self._ids = {}

@@ -18,6 +18,9 @@ class Settings:
         paths = self._conf.get('gallery', 'source').split(';')
         return [Path(i.strip()) for i in paths if i]
 
+    def title(self):
+        return self._conf.get('gallery', 'title').strip()
+
     def description(self):
         return self._conf.get('gallery', 'description').strip()
 
