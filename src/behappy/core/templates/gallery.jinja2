@@ -54,8 +54,9 @@
     <script id="shadowbox.js" src="/js/core.js" type="text/javascript"></script>
     <script type="text/javascript">
         jQuery('.preview-body').click(function (e) {
+            e.preventDefault();
             var url = jQuery(this).attr('data-url');
-            if (e.ctrlKey) {
+            if (e.ctrlKey || e.metaKey) {
                 window.open(url, '_blank').focus();
             } else {
                 location.href = url;
