@@ -54,12 +54,14 @@ def parse_orientation(value):
 
 class Exif:
     def __init__(self, raw):
+        """
+        :type raw: dict
+        """
         self._raw = raw
-        print(raw)
 
     @property
     def maker(self):
-        return self._raw.get('Make', '')
+        return self._raw.get('Make', '').capitalize()
 
     @property
     def model(self):
@@ -96,7 +98,9 @@ class Exif:
 
     @property
     def datetime_original(self):
-        return datetime.strptime(self._raw['DateTimeOriginal'], '%Y:%m:%d %H:%M:%S')
+        if 'DateTimeOriginal' in self._raw:
+            return datetime.strptime(self._raw['DateTimeOriginal'], '%Y:%m:%d %H:%M:%S')
+        return datetime.min
 
     @property
     def style(self):
