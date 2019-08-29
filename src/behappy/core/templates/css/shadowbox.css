@@ -90,19 +90,38 @@
 }
 
 #sb-title, #sb-title-inner {
-    height: 18px;
-    line-height: 18px;
+    height: 8px;
+    line-height: 8px;
 }
 
 #sb-title {
     position: absolute;
-    top: -24px;
+    top: -10px;
+    right: 2px;
 }
 
 #sb-title-inner {
-    color: #555;
-    font-size: 16px;
-    font-weight: bold;
+    font-family: "Comic Sans MS", fantasy;
+    font-size: 8px;
+    color: #888;
+}
+
+#sb-title-inner:hover {
+    color: #CCC;
+}
+
+@media only screen and (max-width: 650px) and (min-width: 481px) {
+    /* Tablet view: 2 tiles */
+    #sb-title-inner {
+        font-family: "Comic Sans MS", monospace;
+    }
+}
+
+@media only screen and (max-width: 1050px) and (min-width: 651px) {
+    /* Small desktop / ipad view: 3 tiles */
+    #sb-title-inner {
+        font-family: "Comic Sans MS", monospace;
+    }
 }
 
 #sb-info, #sb-info-inner {
