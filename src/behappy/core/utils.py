@@ -55,34 +55,35 @@ def parse_orientation(value):
 class Exif:
     def __init__(self, raw):
         self._raw = raw
+        print(raw)
 
     @property
     def maker(self):
-        return self._raw['Make']
+        return self._raw.get('Make', '')
 
     @property
     def model(self):
-        return self._raw['Model']
+        return self._raw.get('Model', '').replace(self.maker, '')
 
     @property
     def lens_model(self):
-        return self._raw['LensModel']
+        return self._raw.get('LensModel', '')
 
     @property
     def iso(self):
-        return self._raw['ISO']
+        return self._raw.get('ISO', '')
 
     @property
     def fnumber(self):
-        return self._raw['FNumber']
+        return self._raw.get('FNumber', '')
 
     @property
     def exposure_time(self):
-        return self._raw['ExposureTime']
+        return self._raw.get('ExposureTime', '')
 
     @property
     def focal_length(self):
-        return self._raw['FocalLength']
+        return self._raw.get('FocalLength', '')
 
     @property
     def orientation(self):
@@ -91,7 +92,7 @@ class Exif:
             'Rotate 90 CW': 270,  # N6
             'Rotate 270 CW': 90,  # N8
         }
-        return name2angle.get(self._raw['Orientation'], 0)
+        return name2angle.get(self._raw.get('Orientation'), 0)
 
     @property
     def datetime_original(self):
@@ -105,10 +106,11 @@ class Exif:
             return res[0]
 
     def info(self):
-        model = '{} &nbsp; {}'.format(self.model, self.lens_model).strip()
-        settings = 'ISO{} &nbsp; f/{} &nbsp; {}s'.format(self.iso, self.fnumber, self.exposure_time).strip()
-        style = '{}'.format(self.style or '').strip()
-        return ' &nbsp;|&nbsp; '.join(i for i in (model, settings, style) if i)
+        model = '{} {} &nbsp; {}'.format(self.maker, self.model, self.lens_model)
+        settings = 'ISO{} &nbsp; f/{} &nbsp; {}s'.format(self.iso, self.fnumber, self.exposure_time)
+        style = '{}'.format(self.style or '')
+        info = ' &nbsp;|&nbsp; '.join(i for i in (model, settings, style) if i)
+        return info.replace('&nbsp;', '').strip()
 
 
 @memoize

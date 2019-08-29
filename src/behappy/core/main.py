@@ -149,7 +149,7 @@ class BeHappy:
 
     def build(self):
         self._load_albums()
-        self._resize_images()
+        # self._resize_images()
         self._copy_static_resources()
         self._write_robots()
         self._render_about_page()
