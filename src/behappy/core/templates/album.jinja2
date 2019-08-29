@@ -23,7 +23,7 @@
         {% for item in images %}
             <li id="{{ item.id }}" class="preview">
                 <div class="preview-body">
-                    <a class="shadowbox" href="{{ item.uri(album.id, 'big') }}" rel="shadowbox[images]">
+                    <a class="shadowbox" href="{{ item.uri(album.id, 'big') }}" title="{{ item.exif_info }}" rel="shadowbox[images]">
                         <img data-src="{{ item.uri(album.id, 'small') }}">
                     </a>
                 </div>

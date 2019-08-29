@@ -5,7 +5,7 @@ from pathlib import Path
 
 from behappy.core.conf import settings
 from behappy.core.resize import ResizeOptions
-from behappy.core.utils import read_exif_dates
+from behappy.core.utils import read_exif
 
 
 class Gallery:
@@ -39,14 +39,15 @@ class Gallery:
 
 
 class Image:
-    def __init__(self, path, date, orientation):
+    def __init__(self, path, exif):
         """
        :type path: pathlib.Path
-       :type date: datetime.datetime
+       :type exif: behappy.core.utils.Exif
        """
         self.path = path
-        self.date = date
-        self.orientation = orientation
+        self.date = exif.datetime_original
+        self.orientation = exif.orientation
+        self.exif_info = exif.info()
 
     @property
     def id(self):
@@ -110,7 +111,7 @@ class ImageSet:
                 result.add(thumbnail.absolute())
             else:
                 raise Exception('Can not find thumbnail: {}'.format(thumbnail))
-        images = [Image(p, d, o) for p, d, o in read_exif_dates(list(result))]
+        images = [Image(p, e) for p, e in read_exif(list(result))]
         return sorted(images, key=lambda x: getattr(x, self.sortby))
 
     @property
@@ -118,8 +119,8 @@ class ImageSet:
         if self.thumbnail_path:
             thumbnail = Path(self.path, self.thumbnail_path)
             if thumbnail.exists():
-                path, date, o = read_exif_dates([thumbnail.absolute()])[0]
-                return Image(path, date, o)
+                path, exif = read_exif([thumbnail.absolute()])[0]
+                return Image(path, exif)
         return None
 
     def __repr__(self):
