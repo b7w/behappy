@@ -118,9 +118,10 @@ class Exif:
 
 
 @memoize
-@timeit
 def read_exif(paths):
-    options = '-Make -Model -LensModel -ISO -FNumber -ExposureTime -FocalLength -Orientation -DateTimeOriginal -FilmMode'
+    options = '-Make -Model -LensModel' \
+              ' -ISO -FNumber -ExposureTime -FocalLength' \
+              ' -Orientation -DateTimeOriginal -FilmMode'
     cmd = 'exiftool {} -json -quiet'.format(options).split() + [i.as_posix() for i in paths]
     exif = json.loads(subprocess.check_output(cmd).decode('utf-8').rstrip('\r\n'))
     return [(Path(i['SourceFile']), Exif(i)) for i in exif]
