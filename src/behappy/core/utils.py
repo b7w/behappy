@@ -120,7 +120,7 @@ class Exif:
 
 @memoize
 def read_exif(paths):
-    cmd = 'exiftool -groupNames {} -json -quiet'.split() + [i.as_posix() for i in paths]
+    cmd = 'exiftool -groupNames -json -quiet'.split() + [i.as_posix() for i in paths]
     exif = json.loads(subprocess.check_output(cmd).decode('utf-8').rstrip('\r\n'))
     return [(Path(i['SourceFile']), Exif(i)) for i in exif]
 
