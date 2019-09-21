@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from time import time_ns
-
 import functools
 import json
 import re
@@ -8,6 +6,7 @@ import subprocess
 import uuid
 from datetime import datetime
 from pathlib import Path
+from time import time_ns
 
 
 def timeit(f):
@@ -99,7 +98,7 @@ class Exif:
 
     @property
     def datetime_original(self):
-        if 'DateTimeOriginal' in self._raw:
+        if 'EXIF:DateTimeOriginal' in self._raw:
             return datetime.strptime(self._raw['EXIF:DateTimeOriginal'], '%Y:%m:%d %H:%M:%S')
         return datetime.min
 
