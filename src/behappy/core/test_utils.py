@@ -13,7 +13,7 @@ class TestUtils(TestCase):
         if not self.test_img1.exists():
             url = 'https://s3-eu-west-1.amazonaws.com/b7w.distributions/behappy/tests/image-01.jpg'
             self.test_img1.parent.mkdir(exist_ok=True)
-            urlretrieve(url, filename=img.as_posix())
+            urlretrieve(url, filename=self.test_img1.as_posix())
 
     def test_parse_orientation(self):
         self.assertEqual(parse_orientation(None), 0)
