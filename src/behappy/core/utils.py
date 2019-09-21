@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from time import time_ns
+
 import functools
 import json
 import re
@@ -6,7 +8,6 @@ import subprocess
 import uuid
 from datetime import datetime
 from pathlib import Path
-from time import time_ns
 
 
 def timeit(f):
@@ -61,31 +62,31 @@ class Exif:
 
     @property
     def maker(self):
-        return self._raw.get('Make', '').capitalize()
+        return self._raw.get('EXIF:Make', '').capitalize()
 
     @property
     def model(self):
-        return self._raw.get('Model', '').replace(self.maker, '')
+        return self._raw.get('EXIF:Model', '').replace(self.maker, '')
 
     @property
     def lens_model(self):
-        return self._raw.get('LensModel', '')
+        return self._raw.get('EXIF:LensModel', '')
 
     @property
     def iso(self):
-        return self._raw.get('ISO', '')
+        return self._raw.get('EXIF:ISO', '')
 
     @property
     def fnumber(self):
-        return self._raw.get('FNumber', '')
+        return self._raw.get('EXIF:FNumber', '')
 
     @property
     def exposure_time(self):
-        return self._raw.get('ExposureTime', '')
+        return self._raw.get('EXIF:ExposureTime', '')
 
     @property
     def focal_length(self):
-        return self._raw.get('FocalLength', '')
+        return self._raw.get('EXIF:FocalLength', '')
 
     @property
     def orientation(self):
@@ -94,17 +95,17 @@ class Exif:
             'Rotate 90 CW': 270,  # N6
             'Rotate 270 CW': 90,  # N8
         }
-        return name2angle.get(self._raw.get('Orientation'), 0)
+        return name2angle.get(self._raw.get('EXIF:Orientation'), 0)
 
     @property
     def datetime_original(self):
         if 'DateTimeOriginal' in self._raw:
-            return datetime.strptime(self._raw['DateTimeOriginal'], '%Y:%m:%d %H:%M:%S')
+            return datetime.strptime(self._raw['EXIF:DateTimeOriginal'], '%Y:%m:%d %H:%M:%S')
         return datetime.min
 
     @property
     def style(self):
-        value = self._raw.get('FilmMode', '')
+        value = self._raw.get('MakerNotes:FilmMode', '')
         res = re.findall(r'\((\w+)\)', value)
         if res:
             return res[0]
@@ -119,10 +120,7 @@ class Exif:
 
 @memoize
 def read_exif(paths):
-    options = '-Make -Model -LensModel' \
-              ' -ISO -FNumber -ExposureTime -FocalLength' \
-              ' -Orientation -DateTimeOriginal -FilmMode'
-    cmd = 'exiftool {} -json -quiet'.format(options).split() + [i.as_posix() for i in paths]
+    cmd = 'exiftool -groupNames {} -json -quiet'.split() + [i.as_posix() for i in paths]
     exif = json.loads(subprocess.check_output(cmd).decode('utf-8').rstrip('\r\n'))
     return [(Path(i['SourceFile']), Exif(i)) for i in exif]
 
