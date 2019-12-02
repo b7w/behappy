@@ -64,7 +64,7 @@ class Image:
     def _cache_name(self, size_options):
         option_pack = tuple()
         option_pack += (size_options.height, size_options.width, size_options.quality, size_options.crop)
-        option_pack += (size_options.name, self.path.absolute().as_posix(), self.path.stat().st_mtime,)
+        option_pack += (size_options.name, self.hash(),)
         if self.orientation:
             option_pack += ('orientation', self.orientation,)
         return self._hash_for(str(option_pack))
