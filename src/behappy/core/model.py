@@ -5,7 +5,7 @@ from pathlib import Path
 
 from behappy.core.conf import settings
 from behappy.core.resize import ResizeOptions
-from behappy.core.utils import read_exif
+from behappy.core.utils import read_exif, memoize
 
 
 class Gallery:
@@ -70,7 +70,14 @@ class Image:
         return self._hash_for(str(option_pack))
 
     def _hash_for(self, content):
-        return hashlib.sha1(bytes(content, encoding='utf-8')).hexdigest()
+        return hashlib.blake2b(bytes(content, encoding='utf-8'), digest_size=32).hexdigest()
+
+    def hash(self):
+        return self._hash(self.path)
+
+    @memoize
+    def _hash(self, path):
+        return hashlib.blake2b(path.read_bytes()).hexdigest()
 
     def __repr__(self):
         return str(self.__dict__)

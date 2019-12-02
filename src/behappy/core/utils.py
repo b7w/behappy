@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
+import inspect
 import json
 import re
 import subprocess
@@ -35,7 +36,10 @@ def memoize(func):
 
     @functools.wraps(func)
     def memoized_func(*args, **kwargs):
-        key = str(args) + str(kwargs)
+        if 'self' in inspect.getfullargspec(func).args:
+            key = str(args[1:]) + str(kwargs)
+        else:
+            key = str(args) + str(kwargs)
         if key not in cache:
             cache[key] = func(*args, **kwargs)
         return cache[key]
