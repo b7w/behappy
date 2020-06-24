@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import configparser
+import io
 import itertools
 import mimetypes
 import shutil
@@ -42,12 +43,16 @@ class BeHappyFile:
         self.folder = folder
 
     def new(self):
+        title = self._title()
+        date = self._parse_or_now()
+        thumbnail = self._first_image()
+        config = self._create(title, date, thumbnail)
+        buffer = io.StringIO()
+        config.write(buffer)
+
         with Path(self.folder, 'behappy.ini').open(mode='w') as f:
-            title = self._title()
-            date = self._parse_or_now()
-            thumbnail = self._first_image()
-            config = self._create(title, date, thumbnail)
-            config.write(f)
+            buffer.seek(0)
+            f.write(buffer.read().strip() + '\n')
 
     def _create(self, title, date, thumbnail):
         config = configparser.ConfigParser()
