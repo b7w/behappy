@@ -153,6 +153,7 @@ class BeHappy:
         self.jinja.globals['now'] = datetime.now()
 
     def build(self):
+        print('Start..')
         self._load_albums()
         self._resize_images()
         self._copy_static_resources()
@@ -162,6 +163,7 @@ class BeHappy:
         self._render_year_pages()
         self._render_album_pages()
         self._render_error_page(name='404', title='404', message='Page not found')
+        print('Done!')
 
     @timeit
     def _render_about_page(self):
@@ -258,7 +260,7 @@ class BeHappy:
                     for name, size in settings.image_sizes().items():
                         option = ResizeOptions.from_settings(size, name)
                         cache_path = image.cache_path(self.target, album.id, option)
-                        tasks.append((image, cache_path, option,))
+                        # tasks.append((image, cache_path, option,))
                 result = pool.starmap(_resize_image, tasks)
 
                 print('[{}] {} of {} resizes'.format(album.title, sum(result), len(result)))

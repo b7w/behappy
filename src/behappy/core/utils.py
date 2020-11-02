@@ -64,6 +64,10 @@ class Exif:
         self._raw = raw
 
     @property
+    def name(self):
+        return Path(self._raw.get('File:FileName', '')).stem
+
+    @property
     def maker(self):
         return self._raw.get('EXIF:Make', '').capitalize()
 
@@ -116,8 +120,9 @@ class Exif:
     def info(self):
         model = '{} {} &nbsp; {}'.format(self.maker, self.model, self.lens_model)
         settings = 'ISO{} &nbsp; f/{} &nbsp; {}s'.format(self.iso, self.fnumber, self.exposure_time)
-        style = '{}'.format(self.style or '')
-        info = ' &nbsp;|&nbsp; '.join(i for i in (model, settings, style) if i)
+        style = self.style or ''
+        name = self.name
+        info = ' &nbsp;|&nbsp; '.join(i for i in (model, settings, style, name) if i)
         return info.replace('&nbsp;', '').strip()
 
 

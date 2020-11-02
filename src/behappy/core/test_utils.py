@@ -29,6 +29,7 @@ class TestUtils(TestCase):
     def test_exif_properties(self):
         _, exif = read_exif([Path(self.test_img1)])[0]
 
+        self.assertEqual(exif.name, 'image-01')
         self.assertEqual(exif.maker, 'Fujifilm')
         self.assertEqual(exif.model, 'X-T30')
         self.assertEqual(exif.lens_model, 'XF35mmF2 R WR')
@@ -43,4 +44,4 @@ class TestUtils(TestCase):
     def test_exif_info(self):
         _, exif = read_exif([Path(self.test_img1)])[0]
 
-        self.assertEqual(exif.info(), 'Fujifilm X-T30  XF35mmF2 R WR | ISO320  f/2.0  1/420s | Astia')
+        self.assertEqual(exif.info(), 'Fujifilm X-T30  XF35mmF2 R WR | ISO320  f/2.0  1/420s | Astia | image-01')
