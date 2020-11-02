@@ -16,7 +16,7 @@ from jinja2 import Environment, PackageLoader
 from behappy.core.conf import settings
 from behappy.core.model import Gallery, ImageSet, Album
 from behappy.core.resize import ResizeOptions, ImageResizer
-from behappy.core.utils import uid
+from behappy.core.utils import uid, timeit
 
 
 def date_filter(value, fmt):
@@ -163,6 +163,7 @@ class BeHappy:
         self._render_album_pages()
         self._render_error_page(name='404', title='404', message='Page not found')
 
+    @timeit
     def _render_about_page(self):
         html = self.jinja.get_template('about.jinja2').render(**settings.templates_parameters(),
                                                               **settings.about())
@@ -171,6 +172,7 @@ class BeHappy:
         with Path(folder, 'index.html').open(mode='w') as f:
             f.write(html)
 
+    @timeit
     def _render_index_page(self):
         params = dict(title=self.gallery.title,
                       html_title='',
@@ -182,6 +184,7 @@ class BeHappy:
         with Path(self.target, 'index.html').open(mode='w') as f:
             f.write(html)
 
+    @timeit
     def _render_year_pages(self):
         groped = {}
         for album in self.gallery.top_albums():
@@ -200,6 +203,7 @@ class BeHappy:
             with Path(folder, 'index.html').open(mode='w') as f:
                 f.write(html)
 
+    @timeit
     def _render_album_pages(self):
         for album in self.gallery.albums():
             if album.children:
@@ -218,6 +222,7 @@ class BeHappy:
             with Path(self.target, 'album', str(album.id), 'index.html').open(mode='w') as f:
                 f.write(html)
 
+    @timeit
     def _render_error_page(self, name, title, message):
         html = self.jinja.get_template('message.jinja2').render(title=title, message=message,
                                                                 **settings.templates_parameters())
@@ -226,6 +231,7 @@ class BeHappy:
         with Path(folder, '{}.html'.format(name)).open(mode='w') as f:
             f.write(html)
 
+    @timeit
     def _copy_static_resources(self):
         for t in ('css', 'img', 'js'):
             path = Path(self.target, t).as_posix()
@@ -233,6 +239,7 @@ class BeHappy:
             path_from = pkg_resources.resource_filename('behappy.core', 'templates/{}'.format(t))
             shutil.copytree(path_from, path)
 
+    @timeit
     def _write_robots(self):
         with Path(self.target, 'robots.txt').open(mode='w') as f:
             f.writelines([
@@ -240,6 +247,7 @@ class BeHappy:
                 'Disallow: /\n',
             ])
 
+    @timeit
     def _resize_images(self):
         with Pool() as pool:
             for album in self.gallery.albums():
@@ -255,6 +263,7 @@ class BeHappy:
 
                 print('[{}] {} of {} resizes'.format(album.title, sum(result), len(result)))
 
+    @timeit
     def _load_albums(self):
         for p in settings.source_folders():
             inis = itertools.chain(p.glob('**/behappy.ini'), p.glob('**/behappy.*.ini'))
