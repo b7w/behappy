@@ -260,7 +260,7 @@ class BeHappy:
                     for name, size in settings.image_sizes().items():
                         option = ResizeOptions.from_settings(size, name)
                         cache_path = image.cache_path(self.target, album.id, option)
-                        # tasks.append((image, cache_path, option,))
+                        tasks.append((image, cache_path, option,))
                 result = pool.starmap(_resize_image, tasks)
 
                 print('[{}] {} of {} resizes'.format(album.title, sum(result), len(result)))
