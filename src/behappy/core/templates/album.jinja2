@@ -2,6 +2,17 @@
 
 {% block title %}{{ album.title }}{% endblock %}
 
+{% block headers %}
+    <meta property="og:title" content="{{ album.title }}"/>
+    <meta property="og:description" content="{{ album.description }}"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:url" content="/album/{{ album.id }}/"/>
+    {% if album.image_set.thumbnail %}
+        <meta property="og:image" content="{{ album.image_set.thumbnail.uri(album.id, 'small') }}"/>
+    {% endif %}
+{% endblock %}
+
+
 {% block navigation %}
     <li class="view-full">
         <a href="#" onclick="playSlideshow()">Slideshow</a>
@@ -23,7 +34,8 @@
         {% for item in images %}
             <li id="{{ item.id }}" class="preview">
                 <div class="preview-body">
-                    <a class="shadowbox" href="{{ item.uri(album.id, 'big') }}" title="{{ item.exif_info }}" rel="shadowbox[images]">
+                    <a class="shadowbox" href="{{ item.uri(album.id, 'big') }}" title="{{ item.exif_info }}"
+                       rel="shadowbox[images]">
                         <img data-src="{{ item.uri(album.id, 'small') }}">
                     </a>
                 </div>
