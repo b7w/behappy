@@ -9,6 +9,8 @@
     <meta property="og:url" content="/album/{{ album.id }}/"/>
     {% if album.image_set.thumbnail %}
         <meta property="og:image" content="{{ album.image_set.thumbnail.uri(album.id, 'small') }}"/>
+        <meta property="og:image:width" content="{{ album.image_set.thumbnail.size_for('small').width }}"/>
+        <meta property="og:image:height" content="{{ album.image_set.thumbnail.size_for('small').height }}"/>
     {% endif %}
 {% endblock %}
 

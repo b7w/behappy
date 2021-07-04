@@ -58,6 +58,10 @@ class Image:
         cache_name = self._cache_name(size_options)
         return Path('/album/{}/{}/{}.jpg'.format(album_id, size_options.name, cache_name))
 
+    def size_for(self, size_name):
+        s = settings.image_size(size_name)
+        return dict(width=s['WIDTH'], height=s['HEIGHT'])
+
     def cache_path(self, target, album_id, size_options):
         return Path(target, Path(self.uri(album_id, size_options.name)).relative_to('/'))
 
