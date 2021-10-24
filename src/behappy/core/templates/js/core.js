@@ -92,7 +92,7 @@ var core = {
             load();
         });
 
-        jQuery('.preview img').bind('load', function () {
+        jQuery('.preview img').not('.ignore-opacity').bind('load', function () {
             jQuery(this).css({opacity: 1});
         });
     },

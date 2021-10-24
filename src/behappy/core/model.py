@@ -87,6 +87,44 @@ class Image:
         return str(self.__dict__)
 
 
+class Video:
+    def __init__(self, path, exif):
+        """
+       :type path: pathlib.Path
+       :type exif: behappy.core.utils.Exif
+       """
+        self.path = path
+        self.date = exif.datetime_original
+        self.exif_info = exif.info()
+
+    @property
+    def id(self):
+        return self._hash_for(self.path.as_posix())
+
+    def uri(self, album_id):
+        cache_name = self._cache_name()
+        return Path('/album/{}/{}/{}.mp4'.format(album_id, 'video', cache_name))
+
+    def cache_path(self, target, album_id):
+        return Path(target, Path(self.uri(album_id)).relative_to('/'))
+
+    def _cache_name(self):
+        return self._hash_for(str(self.hash()))
+
+    def _hash_for(self, content):
+        return hashlib.blake2b(bytes(content, encoding='utf-8'), digest_size=32).hexdigest()
+
+    def hash(self):
+        return self._hash(self.path)
+
+    @memoize
+    def _hash(self, path):
+        return hashlib.blake2b(path.read_bytes()).hexdigest()
+
+    def __repr__(self):
+        return str(self.__dict__)
+
+
 class ImageSet:
     def __init__(self, path, thumbnail, include, exclude, sortby):
         """
@@ -122,7 +160,7 @@ class ImageSet:
                 result.add(thumbnail.absolute())
             else:
                 raise Exception('Can not find thumbnail: {}'.format(thumbnail))
-        images = [Image(p, e) for p, e in read_exif(list(result))]
+        images = [Image(p, e) for p, e in read_exif(list(result))] if result else []
         return sorted(images, key=lambda x: getattr(x, self.sortby))
 
     @property
@@ -138,8 +176,43 @@ class ImageSet:
         return str(self.__dict__)
 
 
+class VideoSet:
+    def __init__(self, path, include, exclude, sortby):
+        """
+        :type path: pathlib.Path
+        """
+        self.path = path
+        self.include = self._split(include)
+        self.exclude = self._split(exclude)
+        self.sortby = sortby
+
+    def _split(self, value):
+        if value:
+            return [i.strip() for i in value.split(',') if i.strip()]
+        return []
+
+    def _filter_hidden(self, iterable):
+        for path in iterable:
+            if not path.name.startswith('.'):
+                yield path
+
+    def videos(self):
+        result = set()
+        for i in self.include:
+            for p in self._filter_hidden(self.path.glob(i)):
+                result.add(p.absolute())
+        for i in self.exclude:
+            for p in self._filter_hidden(self.path.glob(i)):
+                result.remove(p.absolute())
+        videos = [Video(p, e) for p, e in read_exif(list(result))] if result else []
+        return sorted(videos, key=lambda x: getattr(x, self.sortby))
+
+    def __repr__(self):
+        return str(self.__dict__)
+
+
 class Album:
-    def __init__(self, id, parent, title, description, date, tags, hidden, path, image_set):
+    def __init__(self, id, parent, title, description, date, tags, hidden, path, image_set, video_set):
         self.id = id
         self.parent = parent
         self.children = []
@@ -150,6 +223,7 @@ class Album:
         self.hidden = hidden
         self.path = path
         self.image_set = image_set
+        self.video_set = video_set
 
     def uri(self):
         return '/album/{}/'.format(self.id)

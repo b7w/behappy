@@ -35,12 +35,22 @@
     </div>
 
     <ul class="album">
+        {% for item in videos %}
+            <li id="{{ item.id }}" class="preview">
+                <div class="preview-body">
+                    <a class="shadowbox" href="{{ item.uri(album.id) }}" title="{{ item.exif_info }}"
+                       rel="shadowbox[videos]">
+                        <img class="ignore-opacity" data-src="/img/play-big.png" style="opacity: 0.15"/>
+                    </a>
+                </div>
+            </li>
+        {% endfor %}
         {% for item in images %}
             <li id="{{ item.id }}" class="preview">
                 <div class="preview-body">
                     <a class="shadowbox" href="{{ item.uri(album.id, 'big') }}" title="{{ item.exif_info }}"
                        rel="shadowbox[images]">
-                        <img data-src="{{ item.uri(album.id, 'small') }}">
+                        <img data-src="{{ item.uri(album.id, 'small') }}"/>
                     </a>
                 </div>
             </li>

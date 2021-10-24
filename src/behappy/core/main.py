@@ -14,7 +14,7 @@ from dateutil.parser import parse
 from jinja2 import Environment, PackageLoader
 
 from behappy.core.conf import settings
-from behappy.core.model import Gallery, ImageSet, Album
+from behappy.core.model import Gallery, ImageSet, VideoSet, Album
 from behappy.core.resize import ResizeOptions, ImageResizer
 from behappy.core.utils import uid, timeit
 
@@ -156,6 +156,7 @@ class BeHappy:
         print('Start..')
         self._load_albums()
         self._resize_images()
+        self._copy_video()
         self._copy_static_resources()
         self._write_robots()
         self._render_about_page()
@@ -218,7 +219,10 @@ class BeHappy:
                 html = self.jinja.get_template('gallery.jinja2').render(**params,
                                                                         **settings.templates_parameters())
             else:
-                params = dict(album=album, images=album.image_set.images(), back=dict(id=album.parent))
+                params = dict(album=album,
+                              images=album.image_set.images(),
+                              videos=album.video_set.videos(),
+                              back=dict(id=album.parent))
                 html = self.jinja.get_template('album.jinja2').render(**params,
                                                                       **settings.templates_parameters())
             with Path(self.target, 'album', str(album.id), 'index.html').open(mode='w') as f:
@@ -266,6 +270,23 @@ class BeHappy:
                 print('[{}] {} of {} resizes'.format(album.title, sum(result), len(result)))
 
     @timeit
+    def _copy_video(self):
+        for album in self.gallery.albums():
+            total = 0
+            copied = 0
+            path = Path(self.target, 'album', str(album.id))
+            path.mkdir(parents=True, exist_ok=True)
+            for video in album.video_set.videos():
+                total += 1
+                Path(path, 'video').mkdir(exist_ok=True)
+                cache_path = video.cache_path(self.target, album.id)
+                if not cache_path.exists():
+                    copied += 1
+                    shutil.copy(video.path, cache_path)
+
+            print('[{}] {} of {} copied videos'.format(album.title, copied, total))
+
+    @timeit
     def _load_albums(self):
         for p in settings.source_folders():
             inis = itertools.chain(p.glob('**/behappy.ini'), p.glob('**/behappy.*.ini'))
@@ -279,6 +300,12 @@ class BeHappy:
                     exclude=conf.get('images', 'exclude', fallback=None),
                     sortby=conf.get('images', 'sortby', fallback='date'),
                 )
+                video_set = VideoSet(
+                    path=ini.parent,
+                    include=conf.get('videos', 'include', fallback=None),
+                    exclude=conf.get('videos', 'exclude', fallback=None),
+                    sortby=conf.get('videos', 'sortby', fallback='date'),
+                )
                 album = Album(
                     id=conf.get('album', 'id'),
                     parent=conf.get('album', 'parent', fallback=None),
@@ -288,7 +315,8 @@ class BeHappy:
                     tags=conf.get('album', 'tags', fallback=''),
                     hidden=conf.getboolean('album', 'hidden', fallback=False),
                     path=ini.parent,
-                    image_set=image_set
+                    image_set=image_set,
+                    video_set=video_set
                 )
                 if not self.tags or any(i in album.tags for i in self.tags):
                     self.gallery.add_album(album)
