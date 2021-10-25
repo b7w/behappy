@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='behappy',
-    version='0.1',
+    version='0.2',
     install_requires=[i.strip() for i in open('requirements.txt').readlines() if i.strip()],
     packages=['behappy', 'behappy.core', ],
     package_dir={'': 'src'},
