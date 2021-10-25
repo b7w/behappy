@@ -283,7 +283,7 @@ class BeHappy:
                 if not cache_path.exists():
                     copied += 1
                     shutil.copy(video.path, cache_path)
-                    video.path.chmod(0o644)
+                    cache_path.chmod(0o644)
 
             print('[{}] {} of {} copied videos'.format(album.title, copied, total))
 
