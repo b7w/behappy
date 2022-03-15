@@ -86,16 +86,17 @@ def new():
 
 @main.command()
 @click.option('--target', default='target', help='Path to build folder')
-@click.option('--profile', default='root', help='AWS profile')
-@click.option('--bucket', help='AWS S3 bucket name')
+@click.option('--profile', default=None, help='AWS profile')
+@click.option('--endpoint', default=None, help='S3 endpoint url')
+@click.option('--bucket', help='S3 bucket name')
 @click.option('--cloudfront', default=None, help='AWS cloudfront distribution id')
 @timeit
-def sync(target, profile, bucket, cloudfront):
+def sync(target, profile, endpoint, bucket, cloudfront):
     """
     Run test web server
     """
     folder = Path(target)
-    be_sync = BeHappySync(folder, profile, bucket)
+    be_sync = BeHappySync(folder, profile, endpoint, bucket)
     print('Sync S3')
     be_sync.s3()
     if cloudfront:

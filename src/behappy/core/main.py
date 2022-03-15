@@ -82,13 +82,13 @@ class BeHappyFile:
 
 
 class BeHappySync:
-    def __init__(self, folder, profile, bucket):
+    def __init__(self, folder, profile, endpoint, bucket):
         """
         :type folder: Path
         """
         self.folder = folder
         self._session = boto3.session.Session(profile_name=profile)
-        self._bucket = self._session.resource('s3').Bucket(name=bucket)
+        self._bucket = self._session.resource('s3', endpoint_url=endpoint).Bucket(name=bucket)
         self._cloudfront = self._session.client('cloudfront')
 
     def s3(self):
