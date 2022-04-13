@@ -11,7 +11,7 @@ class TestUtils(TestCase):
     def setUp(self):
         self.test_img1 = Path('tmp/image-01.jpg')
         if not self.test_img1.exists():
-            url = 'https://s3-eu-west-1.amazonaws.com/b7w.distributions/behappy/tests/image-01.jpg'
+            url = 'https://storage.yandexcloud.net/artifacts.b7w.me/behappy/tests/image-01.jpg'
             self.test_img1.parent.mkdir(exist_ok=True)
             urlretrieve(url, filename=self.test_img1.as_posix())
 
