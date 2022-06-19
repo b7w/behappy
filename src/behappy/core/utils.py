@@ -107,7 +107,11 @@ class Exif:
     @property
     def datetime_original(self):
         if 'EXIF:DateTimeOriginal' in self._raw:
-            return datetime.strptime(self._raw['EXIF:DateTimeOriginal'], '%Y:%m:%d %H:%M:%S')
+            s = self._raw['EXIF:DateTimeOriginal']
+            return datetime.strptime(s, '%Y:%m:%d %H:%M:%S')
+        if 'QuickTime:DateTimeOriginal' in self._raw:
+            s = self._raw['QuickTime:DateTimeOriginal']
+            return datetime.strptime(s, '%Y:%m:%d %H:%M:%S%z').replace(tzinfo=None)
         return datetime.min
 
     @property
