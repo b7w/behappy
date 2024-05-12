@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import configparser
+import importlib.resources
 import io
 import itertools
 import mimetypes
@@ -9,7 +10,6 @@ from multiprocessing.pool import Pool
 from pathlib import Path
 
 import boto3
-import pkg_resources
 from dateutil.parser import parse
 from jinja2 import Environment, PackageLoader
 
@@ -240,10 +240,13 @@ class BeHappy:
     @timeit
     def _copy_static_resources(self):
         for t in ('css', 'img', 'js'):
-            path = Path(self.target, t).as_posix()
+            path = Path(self.target, t)
             shutil.rmtree(path, ignore_errors=True)
-            path_from = pkg_resources.resource_filename('behappy.core', 'templates/{}'.format(t))
-            shutil.copytree(path_from, path)
+            path.mkdir()
+            module = f'behappy.core.templates.{t}'
+            for name in importlib.resources.contents(module):
+                content = importlib.resources.read_binary(module, name)
+                Path(path, name).write_bytes(content)
 
     @timeit
     def _write_robots(self):
