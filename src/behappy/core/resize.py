@@ -73,7 +73,7 @@ class BetterImage(object):
         """
         Resize image to `width` and `width`
         """
-        self.file = self.file.resize((width, height), Image.ANTIALIAS)
+        self.file = self.file.resize((width, height), Image.Resampling.LANCZOS)
 
     def crop(self, x_offset, y_offset, width, height):
         """
