@@ -32,33 +32,6 @@ def build(target, conf, tags):
 
 
 @main.command()
-@click.argument('videos', nargs=-1)
-@click.option('--preview', default='0', help='Preview time in seconds')
-@timeit
-def convert_video(videos, preview):
-    """
-    Convert videos to mp4 and generate preview
-    """
-    for video in videos:
-        print('# Starting {}'.format(video))
-        src = Path(video)
-        dst_video = src.with_suffix('.mp4')
-        dst_preview = src.with_suffix('.jpg')
-
-        convert_template = 'ffmpeg -i {0} -vcodec libx264 -preset slow -crf 28 -movflags faststart {1}'
-        preview_template = 'ffmpeg -i {0} -vframes 1 -an -ss {1} {2}'
-        exif_template = 'exiftool -overwrite_original -TagsFromFile {0} "-EXIF:all>EXIF:all" {1}'
-
-        if not dst_video.exists():
-            os.system(convert_template.format(src.as_posix(), dst_video.as_posix()))
-        if dst_preview.exists():
-            dst_preview.unlink()
-        os.system(preview_template.format(src.as_posix(), int(preview), dst_preview))
-        os.system(exif_template.format(src.as_posix(), dst_preview.as_posix()))
-        print('# End {}\n\n'.format(video))
-
-
-@main.command()
 @click.option('--target', default='target', help='Path to build folder')
 @click.option('--port', default='8000', help='Path to build folder')
 def server(target, port):
