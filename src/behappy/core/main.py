@@ -2,8 +2,8 @@
 import configparser
 import importlib.resources
 import io
-import itertools
 import mimetypes
+import re
 import shutil
 from datetime import datetime
 from multiprocessing.pool import Pool
@@ -16,7 +16,7 @@ from jinja2 import Environment, PackageLoader
 from behappy.core.conf import settings
 from behappy.core.model import Gallery, ImageSet, VideoSet, Album
 from behappy.core.resize import ResizeOptions, ImageResizer
-from behappy.core.utils import uid, timeit
+from behappy.core.utils import uid, timeit, search_files
 
 
 def date_filter(value, fmt):
@@ -152,10 +152,10 @@ class BeHappy:
         self.jinja.filters['linebreaksbr'] = linebreaksbr_filter
         self.jinja.globals['now'] = datetime.now()
 
-    def build(self):
+    def build(self, processes: int):
         print('Start..')
         self._load_albums()
-        self._resize_images()
+        self._resize_images(processes)
         self._copy_video()
         self._copy_static_resources()
         self._write_robots()
@@ -257,8 +257,8 @@ class BeHappy:
             ])
 
     @timeit
-    def _resize_images(self):
-        with Pool() as pool:
+    def _resize_images(self, processes: int):
+        with Pool(processes=processes) as pool:
             for album in self.gallery.albums():
                 path = Path(self.target, 'album', str(album.id))
                 path.mkdir(parents=True, exist_ok=True)
@@ -292,38 +292,38 @@ class BeHappy:
 
     @timeit
     def _load_albums(self):
-        for p in settings.source_folders():
-            inis = itertools.chain(p.glob('**/behappy.ini'), p.glob('**/behappy.*.ini'))
-            for ini in inis:
-                conf = configparser.ConfigParser()
-                conf.read(ini)
-                image_set = ImageSet(
-                    path=ini.parent,
-                    thumbnail=conf.get('images', 'thumbnail'),
-                    include=conf.get('images', 'include', fallback=None),
-                    exclude=conf.get('images', 'exclude', fallback=None),
-                    sortby=conf.get('images', 'sortby', fallback='date'),
-                )
-                video_set = VideoSet(
-                    path=ini.parent,
-                    include=conf.get('videos', 'include', fallback=None),
-                    exclude=conf.get('videos', 'exclude', fallback=None),
-                    sortby=conf.get('videos', 'sortby', fallback='date'),
-                )
-                album = Album(
-                    id=conf.get('album', 'id'),
-                    parent=conf.get('album', 'parent', fallback=None),
-                    title=conf.get('album', 'title'),
-                    description=conf.get('album', 'description'),
-                    date=conf.get('album', 'date'),
-                    tags=conf.get('album', 'tags', fallback=''),
-                    hidden=conf.getboolean('album', 'hidden', fallback=False),
-                    path=ini.parent,
-                    image_set=image_set,
-                    video_set=video_set
-                )
-                if not self.tags or any(i in album.tags for i in self.tags):
-                    self.gallery.add_album(album)
+        pattern = re.compile(r'^behappy\.ini$|^behappy\.\w+\.ini$')
+        inis = search_files(settings.source_folders(), pattern)
+        for ini in inis:
+            conf = configparser.ConfigParser()
+            conf.read(ini)
+            image_set = ImageSet(
+                path=ini.parent,
+                thumbnail=conf.get('images', 'thumbnail'),
+                include=conf.get('images', 'include', fallback=None),
+                exclude=conf.get('images', 'exclude', fallback=None),
+                sortby=conf.get('images', 'sortby', fallback='date'),
+            )
+            video_set = VideoSet(
+                path=ini.parent,
+                include=conf.get('videos', 'include', fallback=None),
+                exclude=conf.get('videos', 'exclude', fallback=None),
+                sortby=conf.get('videos', 'sortby', fallback='date'),
+            )
+            album = Album(
+                id=conf.get('album', 'id'),
+                parent=conf.get('album', 'parent', fallback=None),
+                title=conf.get('album', 'title'),
+                description=conf.get('album', 'description'),
+                date=conf.get('album', 'date'),
+                tags=conf.get('album', 'tags', fallback=''),
+                hidden=conf.getboolean('album', 'hidden', fallback=False),
+                path=ini.parent,
+                image_set=image_set,
+                video_set=video_set
+            )
+            if not self.tags or any(i in album.tags for i in self.tags):
+                self.gallery.add_album(album)
         for album in self.gallery.albums():
             album.children = [i for i in self.gallery.albums() if album.id == i.parent]
 

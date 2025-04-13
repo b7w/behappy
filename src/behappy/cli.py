@@ -19,8 +19,9 @@ def main():
 @click.option('--target', default='target', help='Path to build folder')
 @click.option('--conf', default='behappy.ini', help='Path to config')
 @click.option('--tags', default='', help='Filter albums by tags')
+@click.option('--processes', default='4', type=int, help='Pool size')
 @timeit
-def build(target, conf, tags):
+def build(target, conf, tags, processes):
     """
     Build static site
     """
@@ -28,7 +29,7 @@ def build(target, conf, tags):
 
     tags = set([i.strip() for i in tags.split(',') if i.strip()])
     blog = BeHappy(target, tags)
-    blog.build()
+    blog.build(processes)
 
 
 @main.command()

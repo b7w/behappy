@@ -2,12 +2,14 @@
 import functools
 import inspect
 import json
+import os
 import re
 import subprocess
 import uuid
 from datetime import datetime
 from pathlib import Path
 from time import time_ns
+from typing import List
 
 
 def timeit(f):
@@ -20,7 +22,7 @@ def timeit(f):
             return f(*args, **kwargs)
         finally:
             elapsed = time_ns() - start
-            elapsed_sec = elapsed / 10 ** 9
+            elapsed_sec = elapsed / 10**9
 
             print(msg.format(f.__name__, elapsed_sec // 60, elapsed_sec % 60, elapsed))
 
@@ -45,6 +47,16 @@ def memoize(func):
         return cache[key]
 
     return memoized_func
+
+
+def search_files(paths: List[Path], pattern: re.Pattern):
+    results = []
+    for path in paths:
+        for root, dirs, files in os.walk(path):
+            for f in files:
+                if pattern.match(f):
+                    results.append(Path(root, f))
+    return results
 
 
 def parse_orientation(value):
