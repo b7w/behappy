@@ -7,7 +7,7 @@ from typing import List
 
 from behappy.core.conf import settings
 from behappy.core.resize import ResizeOptions
-from behappy.core.utils import read_exif, file_stamp
+from behappy.core.utils import read_exif, file_stamp, CacheManager, Exif
 
 
 class Gallery:
@@ -43,11 +43,8 @@ class Gallery:
 class Image:
     VERSION = 1
 
-    def __init__(self, path, exif=None, date=None, orientation=None, exif_info=None, stamp=None, hash=None):
-        """
-       :type path: pathlib.Path
-       :type exif: behappy.core.utils.Exif
-       """
+    def __init__(self, path: Path, exif: Exif = None,
+                 date=None, orientation=None, exif_info=None, stamp=None, hash=None):
         self.path = path
         if exif:
             self.date = exif.datetime_original
@@ -118,11 +115,7 @@ class Image:
 class Video:
     VERSION = 1
 
-    def __init__(self, path, exif=None, date=None, exif_info=None, stamp=None, hash=None):
-        """
-       :type path: pathlib.Path
-       :type exif: behappy.core.utils.Exif
-       """
+    def __init__(self, path: Path, exif: Exif = None, date=None, exif_info=None, stamp=None, hash=None):
         self.path = path
         if exif:
             self.date = exif.datetime_original
@@ -155,10 +148,10 @@ class Video:
     def _hash(self):
         h = hashlib.blake2b()
         with self.path.open('rb') as f:
-            buffer = f.read(1024 * 1024)
+            buffer = f.read(2 * 1024 * 1024)
             while buffer:
                 h.update(buffer)
-                buffer = f.read(1024 * 1024)
+                buffer = f.read(2 * 1024 * 1024)
         return h.hexdigest()
 
     def serialize(self):
@@ -186,11 +179,7 @@ class Video:
 
 
 class ImageSet:
-    def __init__(self, path, thumbnail, include, exclude, sortby, cache_manager):
-        """
-        :type path: pathlib.Path
-        :type cache_manager: behappy.core.utils.CacheManager
-        """
+    def __init__(self, path: Path, thumbnail, include, exclude, sortby, cache_manager: CacheManager):
         self.path = path
         self.thumbnail_path = thumbnail
         self.include = self._split(include)
@@ -245,11 +234,7 @@ class ImageSet:
 
 
 class VideoSet:
-    def __init__(self, path, include, exclude, sortby, cache_manager):
-        """
-        :type path: pathlib.Path
-        :type cache_manager: behappy.core.utils.CacheManager
-        """
+    def __init__(self, path: Path, include, exclude, sortby, cache_manager: CacheManager):
         self.path = path
         self.include = self._split(include)
         self.exclude = self._split(exclude)

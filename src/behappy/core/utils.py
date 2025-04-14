@@ -71,10 +71,7 @@ def parse_orientation(value):
 
 
 class Exif:
-    def __init__(self, raw):
-        """
-        :type raw: dict
-        """
+    def __init__(self, raw: dict):
         self._raw = raw
 
     @property

@@ -2,6 +2,7 @@
 import logging
 import os
 import shutil
+from typing import BinaryIO
 
 from PIL import Image
 
@@ -15,10 +16,7 @@ class ResizeOptions(object):
     crop - need or not.
     """
 
-    def __init__(self, width=0, height=0, crop=False, quality=95, name=None):
-        """
-        :type name: str
-        """
+    def __init__(self, width=0, height=0, crop=False, quality=95, name: str=None):
         self.width = width
         self.height = height
         self.size = max(self.width, self.height)
@@ -145,12 +143,9 @@ class BetterImage(object):
             height = int(self.height / scale)
             return width, height
 
-    def save_to(self, fout, quality):
+    def save_to(self, fout: BinaryIO, quality: int):
         """
         Save to open file. Need to close by yourself.
-
-        :type fout: file
-        :type quality: int
         """
         self.file.save(fout, self.type, quality=quality)
 

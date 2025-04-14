@@ -37,10 +37,7 @@ def _resize_image(img, cache_path, option):
 
 
 class BeHappyFile:
-    def __init__(self, folder):
-        """
-        :type folder: Path
-        """
+    def __init__(self, folder: Path):
         self.folder = folder
 
     def new(self):
@@ -83,10 +80,7 @@ class BeHappyFile:
 
 
 class BeHappySync:
-    def __init__(self, folder, profile, endpoint, bucket):
-        """
-        :type folder: Path
-        """
+    def __init__(self, folder: Path, profile: str, endpoint: str, bucket: str):
         self.folder = folder
         self._session = boto3.session.Session(profile_name=profile)
         self._bucket = self._session.resource('s3', endpoint_url=endpoint).Bucket(name=bucket)
@@ -154,7 +148,7 @@ class BeHappy:
         self.jinja.globals['now'] = datetime.now()
 
     def build(self, processes: int):
-        print('Start..')
+        print('Starting')
         self._load_albums()
         self._resize_images(processes)
         self._copy_video()
@@ -274,7 +268,7 @@ class BeHappy:
                             tasks.append((image, cache_path, option,))
                 result = pool.starmap(_resize_image, tasks)
 
-                print('[{}] {} of {} resizes'.format(album.title, sum(result), len(result)))
+                print('[{}] {} of {} resizes'.format(album.title, sum(result), len(result)), flush=True)
 
     @timeit
     def _copy_video(self):
@@ -292,7 +286,7 @@ class BeHappy:
                     shutil.copy(video.path, cache_path)
                     cache_path.chmod(0o644)
 
-            print('[{}] {} of {} copied videos'.format(album.title, copied, total))
+            print('[{}] {} of {} copied videos'.format(album.title, copied, total), flush=True)
 
     @timeit
     def _load_albums(self):
@@ -337,8 +331,8 @@ class BeHappy:
 
         albums_count = len(self.gallery.albums())
         image_count = sum(i.image_set.images_count() for i in self.gallery.albums())
-        print('Load {} albums and {} images'.format(albums_count, image_count))
+        print('Load {} albums and {} images'.format(albums_count, image_count), flush=True)
         if self.gallery.top_hidden_albums():
             print('Find {} hidden albums:'.format(len(self.gallery.top_hidden_albums())))
             for album in self.gallery.top_hidden_albums():
-                print('\t{} [{}] {} images'.format(album.id, album.title, len(album.image_set.images())))
+                print('\t{} [{}] {} images'.format(album.id, album.title, len(album.image_set.images())), flush=True)
