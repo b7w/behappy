@@ -2,6 +2,7 @@
 import configparser
 import importlib.resources
 import io
+import itertools
 import mimetypes
 import re
 import shutil
@@ -16,7 +17,7 @@ from jinja2 import Environment, PackageLoader
 from behappy.core.conf import settings
 from behappy.core.model import Gallery, ImageSet, VideoSet, Album
 from behappy.core.resize import ResizeOptions, ImageResizer
-from behappy.core.utils import uid, timeit, search_files
+from behappy.core.utils import uid, timeit, search_files, CacheManager
 
 
 def date_filter(value, fmt):
@@ -208,6 +209,8 @@ class BeHappy:
 
     @timeit
     def _render_album_pages(self):
+        gallery_template = self.jinja.get_template('gallery.jinja2')
+        album_template = self.jinja.get_template('album.jinja2')
         for album in self.gallery.albums():
             if album.children:
                 albums = sorted(album.children, key=lambda x: x.date)
@@ -216,15 +219,15 @@ class BeHappy:
                               description=album.description,
                               albums=albums,
                               back=dict(id=album.parent))
-                html = self.jinja.get_template('gallery.jinja2').render(**params,
-                                                                        **settings.templates_parameters())
+                html = gallery_template.render(**params,
+                                               **settings.templates_parameters())
             else:
                 params = dict(album=album,
                               images=album.image_set.images(),
                               videos=album.video_set.videos(),
                               back=dict(id=album.parent))
-                html = self.jinja.get_template('album.jinja2').render(**params,
-                                                                      **settings.templates_parameters())
+                html = album_template.render(**params,
+                                             **settings.templates_parameters())
             with Path(self.target, 'album', str(album.id), 'index.html').open(mode='w') as f:
                 f.write(html)
 
@@ -263,11 +266,12 @@ class BeHappy:
                 path = Path(self.target, 'album', str(album.id))
                 path.mkdir(parents=True, exist_ok=True)
                 tasks = []
-                for image in album.image_set.images(all=True):
-                    for name, size in settings.image_sizes().items():
-                        option = ResizeOptions.from_settings(size, name)
-                        cache_path = image.cache_path(self.target, album.id, option)
-                        tasks.append((image, cache_path, option,))
+                for image in itertools.chain(album.image_set.images(), [album.image_set.thumbnail]):
+                    if image:
+                        for name, size in settings.image_sizes().items():
+                            option = ResizeOptions.from_settings(size, name)
+                            cache_path = image.cache_path(self.target, album.id, option)
+                            tasks.append((image, cache_path, option,))
                 result = pool.starmap(_resize_image, tasks)
 
                 print('[{}] {} of {} resizes'.format(album.title, sum(result), len(result)))
@@ -297,23 +301,27 @@ class BeHappy:
         for ini in inis:
             conf = configparser.ConfigParser()
             conf.read(ini)
+            title = conf.get('album', 'title')
+            cache_manager = CacheManager(ini, title)
             image_set = ImageSet(
                 path=ini.parent,
                 thumbnail=conf.get('images', 'thumbnail'),
                 include=conf.get('images', 'include', fallback=None),
                 exclude=conf.get('images', 'exclude', fallback=None),
                 sortby=conf.get('images', 'sortby', fallback='date'),
+                cache_manager=cache_manager
             )
             video_set = VideoSet(
                 path=ini.parent,
                 include=conf.get('videos', 'include', fallback=None),
                 exclude=conf.get('videos', 'exclude', fallback=None),
                 sortby=conf.get('videos', 'sortby', fallback='date'),
+                cache_manager=cache_manager
             )
             album = Album(
                 id=conf.get('album', 'id'),
                 parent=conf.get('album', 'parent', fallback=None),
-                title=conf.get('album', 'title'),
+                title=title,
                 description=conf.get('album', 'description'),
                 date=conf.get('album', 'date'),
                 tags=conf.get('album', 'tags', fallback=''),
@@ -328,7 +336,7 @@ class BeHappy:
             album.children = [i for i in self.gallery.albums() if album.id == i.parent]
 
         albums_count = len(self.gallery.albums())
-        image_count = sum(len(i.image_set.images(all=True)) for i in self.gallery.albums())
+        image_count = sum(i.image_set.images_count() for i in self.gallery.albums())
         print('Load {} albums and {} images'.format(albums_count, image_count))
         if self.gallery.top_hidden_albums():
             print('Find {} hidden albums:'.format(len(self.gallery.top_hidden_albums())))

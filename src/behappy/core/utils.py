@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import functools
+import hashlib
 import inspect
-import json
 import os
 import re
 import subprocess
@@ -10,6 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from time import time_ns
 from typing import List
+
+import orjson
 
 
 def timeit(f):
@@ -134,19 +136,53 @@ class Exif:
             return res[0]
 
     def info(self):
-        model = '{} {} &nbsp; {}'.format(self.maker, self.model, self.lens_model)
-        settings = 'ISO{} &nbsp; f/{} &nbsp; {}s'.format(self.iso, self.fnumber, self.exposure_time)
+        model = f'{self.maker} {self.model}  {self.lens_model}'
+        settings = f'ISO{self.iso}  f/{self.fnumber}  {self.exposure_time}s'
         style = self.style or ''
         name = self.name
-        info = ' &nbsp;|&nbsp; '.join(i for i in (model, settings, style, name) if i)
-        return info.replace('&nbsp;', '').strip()
+        info = ' | '.join(i for i in (model, settings, style, name) if i)
+        return info.strip()
+
+
+class CacheManager:
+
+    def __init__(self, original_path: Path, name):
+        self.path = original_path.with_suffix('.cache.json')
+        self.name = name
+        if self.path.exists():
+            self._state = orjson.loads(self.path.read_bytes())
+        else:
+            self._state = {}
+
+    def load_list(self, key: str, factory, verification):
+        cache = self._state.get(key)
+        if not cache:
+            print(f'[{self.name}] Empty cache {key}')
+            return []
+        current = sorted([factory.make_stamp(i) for i in verification])
+        saved = sorted([i['stamp'] for i in cache])
+        if current == saved:
+            return [factory.deserialize(i) for i in cache]
+        print(f'[{self.name}] Skip cache {key}')
+        return []
+
+    def save_list(self, key: str, values):
+        self._state[key] = [i.serialize() for i in values]
+        self.path.write_bytes(orjson.dumps(self._state))
 
 
 @memoize
 def read_exif(paths):
     cmd = 'exiftool -groupNames -json -quiet'.split() + [i.as_posix() for i in paths]
-    exif = json.loads(subprocess.check_output(cmd).decode('utf-8').rstrip('\r\n'))
+    output = subprocess.check_output(cmd)
+    exif = orjson.loads(output)
     return [(Path(i['SourceFile']), Exif(i)) for i in exif]
+
+
+def file_stamp(version: int, path: Path) -> str:
+    stat = path.stat()
+    content = (version, stat.st_birthtime, stat.st_size, stat.st_ctime, stat.st_mtime,)
+    return hashlib.blake2b(bytes(str(content), encoding='utf-8'), digest_size=32).hexdigest()
 
 
 def uid():

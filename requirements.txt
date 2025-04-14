@@ -4,3 +4,4 @@ pillow
 jinja2
 python-dateutil
 boto3
+orjson

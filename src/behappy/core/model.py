@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 import hashlib
 from datetime import datetime
+from functools import cache, cached_property
 from pathlib import Path
+from typing import List
 
 from behappy.core.conf import settings
 from behappy.core.resize import ResizeOptions
-from behappy.core.utils import read_exif, memoize
+from behappy.core.utils import read_exif, file_stamp
 
 
 class Gallery:
     def __init__(self, title, description):
         self.title = title
         self.description = description
-        self._albums = []
+        self._albums: List[Album] = []
         self._ids = {}
 
     def add_album(self, album):
@@ -39,15 +41,26 @@ class Gallery:
 
 
 class Image:
-    def __init__(self, path, exif):
+    VERSION = 1
+
+    def __init__(self, path, exif=None, date=None, orientation=None, exif_info=None, stamp=None, hash=None):
         """
        :type path: pathlib.Path
        :type exif: behappy.core.utils.Exif
        """
         self.path = path
-        self.date = exif.datetime_original
-        self.orientation = exif.orientation
-        self.exif_info = exif.info()
+        if exif:
+            self.date = exif.datetime_original
+            self.orientation = exif.orientation
+            self.exif_info = exif.info()
+            self.stamp = file_stamp(self.VERSION, self.path)
+            self.hash = hashlib.blake2b(self.path.read_bytes()).hexdigest()
+        else:
+            self.date = date
+            self.orientation = orientation
+            self.exif_info = exif_info
+            self.stamp = stamp
+            self.hash = hash
 
     @property
     def id(self):
@@ -68,7 +81,7 @@ class Image:
     def _cache_name(self, size_options):
         option_pack = tuple()
         option_pack += (size_options.height, size_options.width, size_options.quality, size_options.crop)
-        option_pack += (size_options.name, self.hash(),)
+        option_pack += (size_options.name, self.hash,)
         if self.orientation:
             option_pack += ('orientation', self.orientation,)
         return self._hash_for(str(option_pack))
@@ -76,26 +89,51 @@ class Image:
     def _hash_for(self, content):
         return hashlib.blake2b(bytes(content, encoding='utf-8'), digest_size=32).hexdigest()
 
-    def hash(self):
-        return self._hash(self.path)
+    def serialize(self):
+        return {'path': self.path.absolute().as_posix(),
+                'date': self.date,
+                'orientation': self.orientation,
+                'exif_info': self.exif_info,
+                'stamp': self.stamp,
+                'hash': self.hash, }
 
-    @memoize
-    def _hash(self, path):
-        return hashlib.blake2b(path.read_bytes()).hexdigest()
+    @classmethod
+    def make_stamp(cls, source: Path):
+        return file_stamp(cls.VERSION, source)
+
+    @classmethod
+    def deserialize(cls, source):
+        path = source['path']
+        date = source['date']
+        orientation = source['orientation']
+        exif_info = source['exif_info']
+        stamp = source['stamp']
+        hash = source['hash']
+        return Image(Path(path), date=date, orientation=orientation, exif_info=exif_info, stamp=stamp, hash=hash)
 
     def __repr__(self):
         return str(self.__dict__)
 
 
 class Video:
-    def __init__(self, path, exif):
+    VERSION = 1
+
+    def __init__(self, path, exif=None, date=None, exif_info=None, stamp=None, hash=None):
         """
        :type path: pathlib.Path
        :type exif: behappy.core.utils.Exif
        """
         self.path = path
-        self.date = exif.datetime_original
-        self.exif_info = exif.info()
+        if exif:
+            self.date = exif.datetime_original
+            self.exif_info = exif.info()
+            self.stamp = file_stamp(self.VERSION, self.path)
+            self.hash = self._hash()
+        else:
+            self.date = date
+            self.exif_info = exif_info
+            self.stamp = stamp
+            self.hash = hash
 
     @property
     def id(self):
@@ -109,32 +147,56 @@ class Video:
         return Path(target, Path(self.uri(album_id)).relative_to('/'))
 
     def _cache_name(self):
-        return self._hash_for(str(self.hash()))
+        return self._hash_for(self.hash)
 
     def _hash_for(self, content):
         return hashlib.blake2b(bytes(content, encoding='utf-8'), digest_size=32).hexdigest()
 
-    def hash(self):
-        return self._hash(self.path)
+    def _hash(self):
+        h = hashlib.blake2b()
+        with self.path.open('rb') as f:
+            buffer = f.read(1024 * 1024)
+            while buffer:
+                h.update(buffer)
+                buffer = f.read(1024 * 1024)
+        return h.hexdigest()
 
-    @memoize
-    def _hash(self, path):
-        return hashlib.blake2b(path.read_bytes()).hexdigest()
+    def serialize(self):
+        return {'path': self.path.absolute().as_posix(),
+                'date': self.date,
+                'exif_info': self.exif_info,
+                'stamp': self.stamp,
+                'hash': self.hash, }
+
+    @classmethod
+    def make_stamp(cls, source: Path):
+        return file_stamp(cls.VERSION, source)
+
+    @classmethod
+    def deserialize(cls, source):
+        path = source['path']
+        date = source['date']
+        exif_info = source['exif_info']
+        stamp = source['stamp']
+        hash = source['hash']
+        return Video(Path(path), date=date, exif_info=exif_info, stamp=stamp, hash=hash)
 
     def __repr__(self):
         return str(self.__dict__)
 
 
 class ImageSet:
-    def __init__(self, path, thumbnail, include, exclude, sortby):
+    def __init__(self, path, thumbnail, include, exclude, sortby, cache_manager):
         """
         :type path: pathlib.Path
+        :type cache_manager: behappy.core.utils.CacheManager
         """
         self.path = path
         self.thumbnail_path = thumbnail
         self.include = self._split(include)
         self.exclude = self._split(exclude)
         self.sortby = sortby
+        self._cache = cache_manager
 
     def _split(self, value):
         if value:
@@ -146,7 +208,8 @@ class ImageSet:
             if not path.name.startswith('.'):
                 yield path
 
-    def images(self, all=False):
+    @cache
+    def _images(self):
         result = set()
         for i in self.include:
             for p in self._filter_hidden(self.path.glob(i)):
@@ -154,22 +217,27 @@ class ImageSet:
         for i in self.exclude:
             for p in self._filter_hidden(self.path.glob(i)):
                 result.remove(p.absolute())
-        if self.thumbnail_path and all:
-            thumbnail = Path(self.path, self.thumbnail_path)
-            if thumbnail.exists():
-                result.add(thumbnail.absolute())
-            else:
-                raise Exception('Can not find thumbnail: {}'.format(thumbnail))
-        images = [Image(p, e) for p, e in read_exif(list(result))] if result else []
+        return result
+
+    def images(self):
+        result = self._images()
+        images = self._cache.load_list('images', Image, result)
+        if not images:
+            print('\t не загрузили из кеша')
+            images = [Image(p, e) for p, e in read_exif(list(result))] if result else []
+            self._cache.save_list('images', images)
         return sorted(images, key=lambda x: getattr(x, self.sortby))
 
-    @property
+    def images_count(self):
+        return len(self.images())
+
+    @cached_property
     def thumbnail(self):
         if self.thumbnail_path:
             thumbnail = Path(self.path, self.thumbnail_path)
             if thumbnail.exists():
                 path, exif = read_exif([thumbnail.absolute()])[0]
-                return Image(path, exif)
+                return Image(path, exif=exif)
         return None
 
     def __repr__(self):
@@ -177,14 +245,16 @@ class ImageSet:
 
 
 class VideoSet:
-    def __init__(self, path, include, exclude, sortby):
+    def __init__(self, path, include, exclude, sortby, cache_manager):
         """
         :type path: pathlib.Path
+        :type cache_manager: behappy.core.utils.CacheManager
         """
         self.path = path
         self.include = self._split(include)
         self.exclude = self._split(exclude)
         self.sortby = sortby
+        self._cache = cache_manager
 
     def _split(self, value):
         if value:
@@ -196,7 +266,8 @@ class VideoSet:
             if not path.name.startswith('.'):
                 yield path
 
-    def videos(self):
+    @cache
+    def _videos(self):
         result = set()
         for i in self.include:
             for p in self._filter_hidden(self.path.glob(i)):
@@ -204,7 +275,14 @@ class VideoSet:
         for i in self.exclude:
             for p in self._filter_hidden(self.path.glob(i)):
                 result.remove(p.absolute())
-        videos = [Video(p, e) for p, e in read_exif(list(result))] if result else []
+        return result
+
+    def videos(self):
+        result = self._videos()
+        videos = self._cache.load_list('videos', Video, result)
+        if not videos:
+            videos = [Video(p, exif=e) for p, e in read_exif(list(result))] if result else []
+            self._cache.save_list('videos', videos)
         return sorted(videos, key=lambda x: getattr(x, self.sortby))
 
     def __repr__(self):
@@ -222,8 +300,8 @@ class Album:
         self.tags = set([i.strip() for i in tags.split(',') if i.strip()])
         self.hidden = hidden
         self.path = path
-        self.image_set = image_set
-        self.video_set = video_set
+        self.image_set: ImageSet = image_set
+        self.video_set: VideoSet = video_set
 
     def uri(self):
         return '/album/{}/'.format(self.id)
