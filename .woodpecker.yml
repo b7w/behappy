@@ -1,23 +1,13 @@
 ---
-kind: pipeline
-type: docker
-name: Main
-
 steps:
   - name: Tests
-    pull: always
-    image: python:3.12-bookworm
+    image: python:3.13-bookworm
     volumes:
-      - name: ci-cache
-        path: /var/cache/ci-cache
+      # ci-cache
+      - '/volumes/system/ci-cache/behappy:/var/cache/ci-cache'
     environment:
       XDG_CACHE_HOME: /var/cache/ci-cache
     commands:
       - apt-get update -qq && apt-get install -yqq libimage-exiftool-perl
       - pip3 install -r requirements.txt
       - cd src && python -m unittest discover
-
-volumes:
-  - name: ci-cache
-    host:
-      path: '/volumes/system/ci-cache/behappy'
