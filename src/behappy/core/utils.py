@@ -61,6 +61,15 @@ def search_files(paths: List[Path], pattern: re.Pattern):
     return results
 
 
+def all_files(path: Path):
+    results = []
+    for root, dirs, files in os.walk(path):
+        for f in files:
+            if not f.startswith('.'):
+                results.append(Path(root, f))
+    return results
+
+
 def parse_orientation(value):
     name2angle = {
         'Rotate 180': 180,  # N3

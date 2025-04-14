@@ -17,7 +17,7 @@ from jinja2 import Environment, PackageLoader
 from behappy.core.conf import settings
 from behappy.core.model import Gallery, ImageSet, VideoSet, Album
 from behappy.core.resize import ResizeOptions, ImageResizer
-from behappy.core.utils import uid, timeit, search_files, CacheManager
+from behappy.core.utils import uid, timeit, search_files, CacheManager, all_files
 
 
 def date_filter(value, fmt):
@@ -88,8 +88,7 @@ class BeHappySync:
 
     def s3(self):
         objects = list(self._bucket.objects.all())
-        files = [i.relative_to(self.folder).as_posix() for i in self.folder.glob('**/*') if
-                 i.is_file() and not i.name.startswith('.')]
+        files = [i.relative_to(self.folder).as_posix() for i in all_files(self.folder)]
         print('Load {} s3 objects and {} local files'.format(len(objects), len(files)))
 
         # upload new album/*.jpg
