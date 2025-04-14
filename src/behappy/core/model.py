@@ -212,7 +212,6 @@ class ImageSet:
         result = self._images()
         images = self._cache.load_list('images', Image, result)
         if not images:
-            print('\t не загрузили из кеша')
             images = [Image(p, e) for p, e in read_exif(list(result))] if result else []
             self._cache.save_list('images', images)
         return sorted(images, key=lambda x: getattr(x, self.sortby))
