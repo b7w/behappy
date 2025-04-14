@@ -92,14 +92,14 @@ class BeHappySync:
         print('Load {} s3 objects and {} local files'.format(len(objects), len(files)))
 
         # upload new album/*.jpg
-        new_images = set(i for i in files if i.endswith('.jpg')) - \
-                     set(i.key for i in objects if i.key.endswith('.jpg'))
-        print('{} images for upload: {}'.format(len(new_images), ','.join(new_images)))
+        new_images = set(i for i in files if i.endswith('.jpg') or i.endswith('.mp4')) - \
+                     set(i.key for i in objects if i.key.endswith('.jpg') or i.key.endswith('.mp4'))
+        print('{} images/videos for upload: {}'.format(len(new_images), ','.join(new_images)))
         for i in new_images:
             self._s3_upload(i)
 
         # upload other
-        other = set(i for i in files if not i.endswith('.jpg'))
+        other = set(i for i in files if not i.endswith('.jpg') and not i.endswith('.mp4'))
         print('{} files for upload: {}'.format(len(other), ', '.join(other)))
         for i in other:
             self._s3_upload(i)
