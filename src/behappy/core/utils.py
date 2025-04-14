@@ -154,7 +154,8 @@ class CacheManager:
     def load_list(self, key: str, factory, verification):
         cache = self._state.get(key)
         if not cache:
-            print(f'[{self.name}] Empty cache {key}')
+            if verification:
+                print(f'[{self.name}] Empty cache {key}')
             return []
         current = sorted([factory.make_stamp(i) for i in verification])
         saved = sorted([i['stamp'] for i in cache])
