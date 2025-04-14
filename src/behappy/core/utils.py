@@ -178,7 +178,7 @@ def read_exif(paths):
 
 def file_stamp(version: int, path: Path) -> str:
     stat = path.stat()
-    content = (version, stat.st_birthtime, stat.st_size, stat.st_ctime, stat.st_mtime,)
+    content = (version, stat.st_size, stat.st_ctime, stat.st_mtime,)
     return hashlib.blake2b(bytes(str(content), encoding='utf-8'), digest_size=32).hexdigest()
 
 
